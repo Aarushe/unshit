@@ -60,7 +60,7 @@ html.nis-on:not(#nis-a):not(#nis-b) body :where([data-nis]):where(:not(code, pre
 html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis-mono], [data-nis-mono] *):not(svg, svg *) {
   font-family: var(--nis-mono) !important;
 }
-html.nis-on:not(#nis-a):not(#nis-b) :is(code, pre, kbd, samp, tt) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(code, pre, kbd, samp, tt):not(#nis-root *) {
   font-family: var(--nis-mono) !important;
   font-size: 0.9em;
 }
@@ -87,7 +87,7 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis-caps] {
   letter-spacing: normal !important;
 }
 
-html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6, [role="heading"], [data-nis="display"]) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6, [role="heading"], [data-nis="display"]):not(#nis-root *) {
   font-family: var(--nis-serif) !important;
   font-weight: 400 !important;
   font-style: normal;
@@ -95,7 +95,7 @@ html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6, [role="heading"]
   line-height: 1.18 !important;
   text-wrap: balance;
 }
-html.nis-on:not(#nis-a):not(#nis-b) :is(h1, [data-nis="display"]) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, [data-nis="display"]):not(#nis-root *) {
   letter-spacing: -0.035em !important;
   line-height: 1.1 !important;
 }
@@ -109,7 +109,7 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis="heading"][data-nis-hsize="small"]
   font-weight: 600 !important;
   letter-spacing: 0 !important;
 }
-html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6) :is(b, strong) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6):not(#nis-root *) :is(b, strong) {
   font-weight: inherit !important;
 }
 
@@ -126,13 +126,13 @@ html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis-script="tall"], :lang(ar), :la
   line-height: 1.5 !important;
 }
 
-html.nis-on:not(#nis-a):not(#nis-b) :is(p, li, dd, blockquote, figcaption) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(p, li, dd, blockquote, figcaption):not(#nis-root *) {
   line-height: 1.65;
 }
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis-small] {
   font-size: 13px !important;
 }
-html.nis-on:not(#nis-a):not(#nis-b) :is(b, strong) {
+html.nis-on:not(#nis-a):not(#nis-b) :is(b, strong):not(#nis-root *) {
   font-weight: 600;
 }
 
@@ -502,7 +502,7 @@ html.nis-on:not(#nis-a):not(#nis-b) legend[data-nis] {
   font-weight: 600;
 }
 
-html.nis-on:not(#nis-a):not(#nis-b) :focus-visible {
+html.nis-on:not(#nis-a):not(#nis-b) :focus-visible:not(#nis-root *) {
   outline: 2px solid rgb(3 7 18 / 0.35) !important;
   outline-offset: 2px !important;
 }

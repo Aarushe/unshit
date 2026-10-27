@@ -6,6 +6,8 @@
 // event page in Firefox and Safari; `chrome.*` is available in all of them.
 
 const KEY = "hosts";
+const JS = ["compose.js", "content.js"];
+const CSS = ["redesign.css", "compose.css"];
 const idFor = (host) => `nis:${host}`;
 const patternFor = (host) => `*://${host}/*`;
 
@@ -26,12 +28,14 @@ async function hosts() {
 async function register(host) {
   const id = idFor(host);
   const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
-  if (existing.length) return;
+  // Registered by an earlier version with other files: register it afresh.
+  if (existing.length && JSON.stringify(existing[0].js) === JSON.stringify(JS) && JSON.stringify(existing[0].css) === JSON.stringify(CSS)) return;
+  if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: [id] });
   const script = {
     id,
     matches: [patternFor(host)],
-    js: ["content.js"],
-    css: ["redesign.css"],
+    js: JS,
+    css: CSS,
     runAt: "document_start",
     allFrames: true,
     persistAcrossSessions: true,
@@ -82,8 +86,8 @@ async function tabsOn(host) {
 
 async function apply(tabId) {
   try {
-    await chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ["redesign.css"] });
-    await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ["content.js"] });
+    await chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: CSS });
+    await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: JS });
   } catch (err) {
     console.warn("Redesign could not be applied to this tab:", err);
   }

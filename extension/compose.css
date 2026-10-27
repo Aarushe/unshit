@@ -1,0 +1,1315 @@
+/*
+ * New Internet Society — composed pages (compose.js).
+ * The blocks of the main site, rebuilt in plain CSS: hairline rails, tinted
+ * frames holding white panels, mono file bars, hatched stages, serif headings.
+ * Everything is under #nis-root, which first undoes the page's own styles.
+ */
+
+/* Hold the page back until the redesign has decided what to show: covered,
+ * not hidden, so the page can still be read as laid out. */
+html.nis-wait::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: #fff;
+  pointer-events: none;
+}
+
+/* Composed: the original page stays loaded, hidden; pop-ups it opens are lifted out. */
+html.nis-composed body > :not(#nis-root, [data-nis-portal], script, style) {
+  display: none !important;
+}
+html.nis-composed,
+html.nis-composed body {
+  background: #fff !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  overflow-x: clip !important;
+  display: block !important;
+  position: static !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100% !important;
+  transform: none !important;
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* Undo the page's styles inside our layout (svg drawings keep their attributes). */
+#nis-root,
+#nis-root :where(*:not(svg, svg *)) {
+  all: revert;
+  box-sizing: border-box;
+}
+
+#nis-root {
+  --ink: #030712;
+  --ink-60: rgb(3 7 18 / 0.6);
+  --ink-55: rgb(3 7 18 / 0.55);
+  --ink-40: rgb(3 7 18 / 0.4);
+  --ink-25: rgb(3 7 18 / 0.25);
+  --line: rgb(3 7 18 / 0.06);
+  --line-2: rgb(3 7 18 / 0.1);
+  --tint: rgb(3 7 18 / 0.025);
+  --gray-500: #6b7280;
+  --gray-400: #9ca3af;
+  --serif: "NIS Serif", "LT Superior Serif", ui-serif, Georgia, "Noto Serif", serif;
+  --sans: "NIS Sans", "Inter Display", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --hatch: repeating-linear-gradient(315deg, rgb(3 7 18 / 0.06) 0, rgb(3 7 18 / 0.06) 1px, transparent 0, transparent 50%);
+
+  display: block;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  background: #fff;
+  color: var(--ink);
+  font: 400 16px/1.625 var(--sans);
+  letter-spacing: 0.1px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  text-align: start;
+}
+#nis-root ::selection {
+  background: var(--ink);
+  color: #fff;
+}
+#nis-root :focus-visible {
+  outline: 2px solid rgb(3 7 18 / 0.35);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+ * Layout primitives: rails, gaps, frames, panels, file bars, hatch, float
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-row {
+  display: block;
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-rail {
+  display: block;
+  max-width: 1152px;
+  margin: 0 auto;
+  border-inline: 1px solid var(--line);
+}
+#nis-root .nis-pad {
+  padding: 12px 24px;
+}
+#nis-root .nis-pad2 {
+  padding: 16px;
+}
+#nis-root .nis-flush {
+  padding: 0;
+}
+#nis-root .nis-gap {
+  display: block;
+  height: 80px;
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-top {
+  display: block;
+  height: 48px;
+}
+#nis-root .nis-end {
+  height: 40px;
+}
+
+#nis-root .nis-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+#nis-root .nis-panel {
+  display: block;
+  min-width: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.05), 0 0 0 1px var(--line);
+}
+#nis-root .nis-clip {
+  overflow: hidden;
+}
+#nis-root .nis-filebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+#nis-root .nis-filebar p {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 12px/20px var(--mono);
+}
+#nis-root .nis-file {
+  color: var(--ink);
+}
+#nis-root .nis-note {
+  color: var(--gray-400);
+}
+#nis-root .nis-dots {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+#nis-root .nis-dots span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgb(3 7 18 / 0.1);
+}
+#nis-root .nis-hatch {
+  background-color: #fff;
+  background-image: var(--hatch);
+  background-size: 10px 10px;
+}
+#nis-root .nis-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+#nis-root .nis-float {
+  display: block;
+  max-width: 100%;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 15px -3px rgb(3 7 18 / 0.05), 0 4px 6px -4px rgb(3 7 18 / 0.05), 0 0 0 1px rgb(3 7 18 / 0.1);
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+ * Type
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-h1 {
+  margin: 0;
+  max-width: 1024px;
+  font: 400 42px/1.12 var(--serif);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+#nis-root .nis-h2 {
+  margin: 0;
+  max-width: 768px;
+  font: 400 34px/1.15 var(--serif);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+#nis-root .nis-h3 {
+  margin: 0;
+  font: 400 22px/1.3 var(--serif);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+#nis-root .nis-lead {
+  margin: 0;
+  max-width: 672px;
+  font-size: 18px;
+  line-height: 32px;
+  color: var(--ink-60);
+}
+#nis-root .nis-lead + .nis-lead {
+  margin-top: 12px;
+}
+#nis-root .nis-eyebrow,
+#nis-root .nis-annot p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 24px;
+  color: var(--ink-55);
+}
+#nis-root .nis-annot p {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgb(3 7 18 / 0.35);
+}
+#nis-root .nis-small {
+  margin: 4px 0 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-60);
+}
+#nis-root strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+#nis-root .nis-code,
+#nis-root .nis-kbd {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  color: var(--ink);
+}
+#nis-root .nis-kbd {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgb(3 7 18 / 0.05);
+}
+#nis-root .nis-faint {
+  color: var(--gray-400);
+}
+#nis-root .nis-chip {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgb(3 7 18 / 0.04);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font: 400 11px/20px var(--mono);
+  color: #4b5563;
+}
+
+/* Links */
+#nis-root .nis-a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: rgb(3 7 18 / 0.2);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+#nis-root .nis-a:hover {
+  text-decoration-color: rgb(3 7 18 / 0.6);
+}
+#nis-root .nis-a-quiet {
+  text-decoration: none;
+}
+
+/* Buttons */
+#nis-root .nis-btn,
+#nis-root .nis-control-btn,
+#nis-root .nis-control-btn2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--ink);
+  color: #fff;
+  font: 600 14px/24px var(--sans);
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#nis-root .nis-btn:hover,
+#nis-root .nis-control-btn:hover {
+  background: #1f2937;
+}
+#nis-root .nis-btn-2,
+#nis-root .nis-control-btn2 {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+#nis-root .nis-btn-2:hover,
+#nis-root .nis-control-btn2:hover {
+  background: #f9fafb;
+}
+#nis-root .nis-arrow,
+#nis-root .nis-chev {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+#nis-root .nis-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-block: 16px;
+}
+
+/* --------------------------------------------------------------------------
+ * Header
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-header {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.88);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+}
+#nis-root .nis-headin {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 1152px;
+  min-height: 56px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+#nis-root .nis-brand {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+#nis-root .nis-logo,
+#nis-root .nis-brand .nis-icon {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+}
+#nis-root .nis-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+  font: 400 17px/20px var(--sans);
+  letter-spacing: -0.3px;
+}
+#nis-root .nis-nav {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 20px;
+  min-width: 0;
+}
+#nis-root .nis-navlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: 400 14px/24px var(--sans);
+  color: #4b5563;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#nis-root .nis-navlink:hover,
+#nis-root .nis-menu[data-open] > .nis-navlink {
+  color: var(--ink);
+}
+#nis-root .nis-menu {
+  position: relative;
+  display: block;
+}
+#nis-root .nis-menupanel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: -16px;
+  z-index: 30;
+  width: max-content;
+  max-width: min(720px, 90vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 6px;
+  border-radius: 16px;
+  background: #f9f9fa;
+  box-shadow: 0 0 0 1px var(--line-2), 0 24px 48px -12px rgb(3 7 18 / 0.25);
+}
+#nis-root .nis-menu[data-open] > .nis-menupanel {
+  display: block;
+}
+#nis-root .nis-menugrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+  min-width: min(440px, 86vw);
+}
+#nis-root .nis-menugroup {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line);
+}
+#nis-root .nis-menutitle {
+  margin: 0 8px 6px;
+  font: 400 12px/20px var(--mono);
+  color: var(--gray-500);
+}
+#nis-root .nis-menulink {
+  display: block;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: 400 14px/22px var(--sans);
+  color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+#nis-root .nis-menulink:hover {
+  background: rgb(3 7 18 / 0.04);
+}
+#nis-root .nis-menufoot {
+  padding: 10px 14px 6px;
+  font-size: 14px;
+}
+#nis-root .nis-menufoot .nis-a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  font-weight: 600;
+}
+#nis-root .nis-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+}
+#nis-root .nis-tools .nis-btn {
+  min-height: 32px;
+  padding: 4px 14px;
+}
+#nis-root .nis-search .nis-control {
+  width: 200px;
+  min-height: 34px;
+}
+#nis-root .nis-burger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9999px;
+  background: rgb(3 7 18 / 0.04);
+  cursor: pointer;
+}
+#nis-root .nis-burger svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --------------------------------------------------------------------------
+ * Notices
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-notices {
+  display: block;
+}
+#nis-root .nis-notice {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 16px;
+}
+#nis-root .nis-notice + .nis-notice {
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-notice p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-60);
+}
+
+/* --------------------------------------------------------------------------
+ * Hero
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-hero-h {
+  padding-block: 8px;
+}
+#nis-root .nis-hero-img {
+  display: block;
+  max-width: min(720px, 100%);
+  max-height: 420px;
+  width: auto;
+  height: auto;
+}
+
+/* --------------------------------------------------------------------------
+ * Content blocks
+ * ------------------------------------------------------------------------ */
+
+/* Prose */
+#nis-root .nis-prose {
+  display: block;
+  max-width: 704px;
+  padding-block: 8px;
+  color: var(--ink-60);
+}
+#nis-root .nis-prose > * {
+  margin: 0 0 16px;
+}
+#nis-root .nis-prose > :last-child {
+  margin-bottom: 0;
+}
+#nis-root .nis-prose .nis-h3 {
+  margin-top: 28px;
+  color: var(--ink);
+}
+#nis-root .nis-prose ul,
+#nis-root .nis-prose ol {
+  padding-inline-start: 20px;
+}
+#nis-root .nis-prose li + li {
+  margin-top: 6px;
+}
+#nis-root .nis-prose li::marker {
+  color: var(--ink-25);
+}
+#nis-root .nis-figure {
+  margin: 24px 0;
+}
+#nis-root .nis-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+#nis-root .nis-figure figcaption {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+/* Cards */
+#nis-root .nis-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 16px;
+}
+#nis-root .nis-cards.nis-one {
+  grid-template-columns: minmax(0, 640px);
+}
+#nis-root .nis-card {
+  height: 100%;
+}
+#nis-root .nis-cardbody {
+  display: block;
+  padding: 20px 24px 24px;
+}
+#nis-root .nis-cardstage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 24px;
+}
+#nis-root .nis-cardstage .nis-float {
+  transform: rotate(-1deg);
+}
+#nis-root .nis-card:nth-child(even) .nis-cardstage .nis-float {
+  transform: rotate(1deg);
+}
+#nis-root .nis-cardstage .nis-img {
+  max-height: 200px;
+  width: auto;
+  border-radius: 0;
+}
+#nis-root .nis-cardfoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+}
+#nis-root .nis-cmd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 13px/24px var(--mono);
+  color: var(--gray-500);
+}
+#nis-root .nis-cardacts {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+#nis-root .nis-cardacts .nis-btn {
+  min-height: 32px;
+  padding: 4px 14px;
+}
+#nis-root .nis-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  font: 500 14px/24px var(--sans);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Topics: text-only cards */
+#nis-root .nis-topics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 6px;
+}
+#nis-root .nis-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 20px 20px;
+  border: 0;
+  color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+#nis-root .nis-topic:hover {
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.05), 0 0 0 1px rgb(3 7 18 / 0.16);
+}
+#nis-root .nis-topictitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font: 400 20px/1.3 var(--serif);
+  letter-spacing: -0.015em;
+}
+#nis-root .nis-topictitle .nis-arrow {
+  color: var(--gray-400);
+  transform: translateY(3px);
+}
+#nis-root .nis-topic:hover .nis-arrow {
+  color: var(--ink);
+}
+#nis-root .nis-topic .nis-small {
+  margin: 0;
+}
+
+/* Action tiles */
+#nis-root .nis-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr));
+  gap: 6px;
+}
+#nis-root .nis-tile {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 14px 16px;
+  border: 0;
+  color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+#nis-root .nis-tile:hover {
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.05), 0 0 0 1px rgb(3 7 18 / 0.16);
+}
+#nis-root .nis-tileicon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgb(3 7 18 / 0.04);
+}
+#nis-root .nis-tileicon .nis-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+#nis-root .nis-tiletext {
+  font: 500 15px/1.35 var(--sans);
+}
+#nis-root .nis-tile .nis-arrow {
+  color: var(--gray-400);
+  transition: transform 0.15s, color 0.15s;
+}
+#nis-root .nis-tile:hover .nis-arrow {
+  color: var(--ink);
+  transform: translateX(2px);
+}
+
+/* Steps */
+#nis-root .nis-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 1px;
+  background: var(--line);
+}
+#nis-root .nis-step {
+  display: block;
+  padding: 24px;
+  background: #fff;
+}
+#nis-root .nis-stepbox {
+  display: grid;
+  height: 128px;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+#nis-root .nis-p1 { place-items: start; }
+#nis-root .nis-p2 { place-items: center; }
+#nis-root .nis-p3 { place-items: end; }
+#nis-root .nis-p4 { align-items: end; justify-items: start; }
+#nis-root .nis-p5 { align-items: start; justify-items: end; }
+#nis-root .nis-p6 { align-items: end; justify-items: center; }
+#nis-root .nis-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font: 500 14px/1 var(--mono);
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.2);
+}
+
+/* Link rows */
+#nis-root .nis-rows {
+  display: flex;
+  flex-direction: column;
+}
+#nis-root .nis-rows.nis-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+}
+#nis-root .nis-linkrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: 400 15px/1.45 var(--sans);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+#nis-root .nis-rows > .nis-linkrow:first-child {
+  border-top: 0;
+}
+#nis-root .nis-linkrow:hover {
+  background: rgb(3 7 18 / 0.02);
+}
+#nis-root .nis-linktitle {
+  flex: 1;
+  min-width: 0;
+}
+#nis-root .nis-meta {
+  flex-shrink: 1;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 12px/20px var(--mono);
+  color: var(--gray-500);
+}
+#nis-root .nis-linkrow .nis-arrow {
+  color: var(--gray-400);
+}
+#nis-root .nis-linkrow:hover .nis-arrow {
+  color: var(--ink);
+}
+
+/* Feed rows: a title link and its meta line (with its own links) */
+#nis-root .nis-feedrow {
+  display: block;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-rows > .nis-feedrow:first-child {
+  border-top: 0;
+}
+#nis-root .nis-feedtitle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font: 500 16px/1.45 var(--sans);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+#nis-root .nis-feedtitle:hover {
+  text-decoration: underline;
+  text-decoration-color: rgb(3 7 18 / 0.25);
+  text-underline-offset: 3px;
+}
+#nis-root .nis-feedtitle .nis-arrow {
+  width: 12px;
+  height: 12px;
+  color: var(--gray-400);
+}
+#nis-root .nis-feedmeta {
+  margin: 2px 0 0;
+  font: 400 12px/20px var(--mono);
+  color: var(--gray-500);
+}
+#nis-root .nis-feedmeta .nis-a {
+  color: var(--gray-500);
+}
+#nis-root .nis-feedmeta .nis-a:hover {
+  color: var(--ink);
+}
+
+/* Utilities side by side */
+#nis-root .nis-utilgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+#nis-root .nis-util {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+#nis-root .nis-utiltitle {
+  padding-inline: 8px;
+}
+
+/* Tables */
+#nis-root .nis-tablewrap {
+  overflow-x: auto;
+}
+#nis-root .nis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+#nis-root .nis-table th,
+#nis-root .nis-table td {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  text-align: start;
+  vertical-align: top;
+}
+#nis-root .nis-table thead th {
+  border-top: 0;
+  font: 500 12px/20px var(--mono);
+  color: var(--gray-500);
+}
+#nis-root .nis-table tbody th {
+  font-weight: 500;
+  color: var(--ink);
+}
+#nis-root .nis-table td {
+  color: var(--ink-60);
+}
+#nis-root .nis-cellimg {
+  max-height: 280px;
+  width: auto;
+  margin-bottom: 6px;
+}
+#nis-root .nis-figure-sm {
+  max-width: 320px;
+}
+
+/* Disclosures */
+#nis-root .nis-faq {
+  display: block;
+  max-width: 768px;
+  border-block: 1px solid var(--line);
+}
+#nis-root .nis-q + .nis-q {
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-q summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  list-style: none;
+  cursor: pointer;
+  font: 400 22px/32px var(--serif);
+  letter-spacing: -0.015em;
+}
+#nis-root .nis-q summary::-webkit-details-marker {
+  display: none;
+}
+#nis-root .nis-plus {
+  position: relative;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--gray-400);
+}
+#nis-root .nis-plus::before,
+#nis-root .nis-plus::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+#nis-root .nis-plus::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+#nis-root .nis-plus::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transition: transform 0.15s;
+}
+#nis-root .nis-q[open] .nis-plus::after {
+  transform: scaleY(0);
+}
+#nis-root .nis-answer {
+  display: block;
+  padding-bottom: 20px;
+}
+
+/* Logos */
+#nis-root .nis-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px 48px;
+  padding-block: 24px;
+}
+#nis-root .nis-logos .nis-img {
+  max-height: 44px;
+  max-width: 160px;
+  width: auto;
+  border-radius: 0;
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------------------------
+ * Forms: the page's own controls, styled
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-formframe {
+  max-width: 704px;
+}
+#nis-root .nis-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 24px 24px;
+}
+#nis-root .nis-formrow {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 6px 20px;
+  align-items: start;
+}
+#nis-root .nis-label {
+  margin: 0;
+  padding-top: 9px;
+  font: 500 14px/20px var(--sans);
+  color: var(--ink);
+}
+#nis-root .nis-req {
+  color: var(--gray-400);
+}
+#nis-root .nis-fieldcol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+#nis-root .nis-fieldwrap {
+  display: block;
+}
+#nis-root .nis-control:is(input, select, textarea) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line-2), 0 1px 2px rgb(3 7 18 / 0.04);
+  color: var(--ink);
+  font: 400 15px/24px var(--sans);
+  outline: none;
+  transition: box-shadow 0.15s;
+}
+#nis-root textarea.nis-control {
+  min-height: 96px;
+  border-radius: 14px;
+  resize: vertical;
+}
+#nis-root select.nis-control {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-inline-end: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5 6.5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+#nis-root .nis-control:focus {
+  box-shadow: inset 0 0 0 1px rgb(3 7 18 / 0.35), 0 0 0 4px rgb(3 7 18 / 0.06);
+}
+#nis-root .nis-control::placeholder {
+  color: var(--gray-400);
+}
+#nis-root .nis-help {
+  margin: 0;
+  padding-inline: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gray-500);
+}
+#nis-root .nis-formmedia {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#nis-root .nis-formmedia img {
+  display: block;
+  max-height: 56px;
+  width: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+#nis-root .nis-formmedia a img,
+#nis-root .nis-formmedia a > img {
+  max-height: 24px;
+  box-shadow: none;
+}
+#nis-root .nis-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding-top: 8px;
+}
+#nis-root .nis-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+#nis-root .nis-choice input {
+  accent-color: var(--ink);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+#nis-root .nis-formacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 6px;
+  padding-inline-start: 220px;
+}
+#nis-root .nis-formnote {
+  padding: 12px 24px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gray-500);
+}
+#nis-root .nis-formnote p {
+  margin: 0;
+}
+
+#nis-root .nis-inlineform {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+}
+#nis-root .nis-inlineform .nis-fieldwrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Footer
+ * ------------------------------------------------------------------------ */
+
+#nis-root .nis-footer {
+  display: block;
+  margin-top: 96px;
+  border-top: 1px solid var(--line);
+}
+#nis-root .nis-footer > .nis-row:first-child {
+  border-top: 0;
+}
+#nis-root .nis-footcols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  gap: 24px;
+  padding-block: 32px;
+}
+#nis-root .nis-footcol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+#nis-root .nis-foottitle {
+  margin: 0 0 4px;
+  font: 500 14px/20px var(--sans);
+  color: var(--ink);
+}
+#nis-root .nis-footlink {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: 400 12px/22px var(--mono);
+  color: var(--gray-500);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+#nis-root .nis-footlink:hover {
+  color: var(--ink);
+}
+#nis-root .nis-footbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding-block: 32px;
+}
+#nis-root .nis-brand-sm .nis-logo {
+  height: 24px;
+}
+#nis-root .nis-footmeta {
+  flex: 1;
+  min-width: 240px;
+}
+#nis-root .nis-footmeta p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gray-500);
+}
+#nis-root .nis-footlinks {
+  display: flex;
+  gap: 24px;
+}
+
+/* Back to the redesign from the original */
+.nis-backbtn {
+  position: fixed !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  z-index: 2147483647 !important;
+  padding: 8px 16px !important;
+  border: 0 !important;
+  border-radius: 9999px !important;
+  background: #030712 !important;
+  color: #fff !important;
+  font: 600 14px/24px system-ui, sans-serif !important;
+  cursor: pointer !important;
+}
+
+/* --------------------------------------------------------------------------
+ * Wide screens and phones
+ * ------------------------------------------------------------------------ */
+
+@media (min-width: 640px) {
+  #nis-root .nis-h1 { font-size: 64px; }
+  #nis-root .nis-h2 { font-size: 44px; line-height: 1.12; }
+  #nis-root .nis-gap { height: 96px; }
+  #nis-root .nis-top { height: 64px; }
+}
+@media (min-width: 1024px) {
+  #nis-root .nis-h1 { font-size: 76px; line-height: 1.1; }
+}
+@media (max-width: 860px) {
+  #nis-root .nis-nav,
+  #nis-root .nis-search {
+    display: none;
+  }
+  #nis-root .nis-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #nis-root.nis-navopen .nis-headin {
+    flex-wrap: wrap;
+  }
+  #nis-root.nis-navopen .nis-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    order: 9;
+    width: 100%;
+    padding-bottom: 12px;
+  }
+  #nis-root.nis-navopen .nis-menupanel {
+    position: static;
+    width: auto;
+    max-width: none;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+}
+@media (max-width: 640px) {
+  #nis-root .nis-pad { padding: 10px 16px; }
+  #nis-root .nis-pad2 { padding: 8px; }
+  #nis-root .nis-headin { padding: 0 16px; gap: 12px; }
+  #nis-root .nis-tools .nis-btn:not(:last-child) { display: none; }
+  #nis-root .nis-formrow { grid-template-columns: 1fr; }
+  #nis-root .nis-label { padding-top: 0; }
+  #nis-root .nis-formacts { padding-inline-start: 0; }
+  #nis-root .nis-form { padding: 16px; }
+  #nis-root .nis-meta { display: none; }
+}
+
+/* Scripts that join or stack letters: no tracking, room for marks. */
+#nis-root:is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(hi), :lang(bn), :lang(ta), :lang(te), :lang(th), :lang(ja), :lang(zh), :lang(ko)) :where(*) {
+  letter-spacing: normal;
+}

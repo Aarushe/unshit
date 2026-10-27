@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "New Internet Society — Redesign",
   "short_name": "Redesign",
-  "version": "0.2.0",
-  "description": "One click restyles the site you're on in the New Internet Society design. Forms, menus and pop-ups keep working.",
+  "version": "0.3.0",
+  "description": "One click rebuilds the site you're on in the New Internet Society design: clear sections, one set of blocks. Forms, menus and pop-ups keep working.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -42,7 +42,8 @@
     {
       "resources": [
         "fonts/*",
-        "redesign.css"
+        "redesign.css",
+        "compose.css"
       ],
       "matches": [
         "<all_urls>"

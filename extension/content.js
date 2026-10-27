@@ -1208,7 +1208,7 @@
   // Pages that set <html class> wholesale (Wikipedia and many frameworks) drop ours: put them back.
   let bareClass = false;
   function keepClasses() {
-    if (!html.classList.contains("nis-on")) {
+    if (!html.classList.contains("nis-on") || (initialDone && !html.classList.contains("nis-ready"))) {
       html.classList.add("nis-on");
       if (bareClass) html.classList.add("nis-bare");
       if (initialDone) html.classList.add("nis-ready");
@@ -1257,9 +1257,52 @@
     layout();
   }
 
+  // What compose.js needs from here: casing, and restyling for pop-ups it lifts out.
+  const api = {
+    fixCase,
+    isShouting,
+    learnPage() {
+      learn(document.title);
+      learnWithin(document.body);
+      const title = fixCase(document.title, { lang: html.getAttribute("lang") || undefined });
+      if (title !== document.title) document.title = title;
+    },
+    tag(el) {
+      tag(el, { ...ROOT_CTX });
+    },
+  };
+
   function start() {
     if (started || !document.body) return;
     started = true;
+    // Top-level pages are rebuilt from building blocks when they can be read
+    // (compose.js); everything else, and pages it declines, is restyled.
+    if (window.top === window && window.__nisCompose) {
+      const began = performance.now();
+      const decide = () => {
+        // Pages that render in the browser (single-page apps) may still be empty: give them a moment.
+        // The page is covered meanwhile, so wait for its own stylesheets (layout decides what's a
+        // column, a card or a row) and, for pages that render in the browser, for some content.
+        const waited = performance.now() - began;
+        const thin = (document.body.innerText || "").trim().length < 200;
+        if (document.readyState !== "complete" && waited < 5000 && (!stylesheetsReady() || thin)) return setTimeout(decide, 150);
+        let composed = false;
+        try {
+          composed = window.__nisCompose.run(api);
+        } catch (err) {
+          console.debug("Redesign couldn't compose this page:", err);
+        }
+        html.classList.remove("nis-wait");
+        if (!composed) restyle();
+      };
+      decide();
+      return;
+    }
+    html.classList.remove("nis-wait");
+    restyle();
+  }
+
+  function restyle() {
     // Started before every stylesheet was in (a slow one): read the page again as each late one arrives.
     let retagTimer = 0;
     const later = () => {

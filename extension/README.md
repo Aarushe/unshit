@@ -1,13 +1,19 @@
 # New Internet Society — Redesign (browser extension)
 
-One click restyles the site you're on in the New Internet Society design:
-LT Superior Serif headings at the design's sizes, Inter Display text in a
-softer body ink, hairline rails down the page's main column, groups of boxes
-gathered into tinted frames of white panels, hatched stages, pill buttons and
-fields, and framed pop-ups. Titles are never shown in all caps.
+One click rebuilds the site you're on in the New Internet Society design.
 
-The page itself keeps running. Forms submit, menus open, pop-ups pop, logins
-and payments work, because nothing is rebuilt; only how it looks changes.
+The page is read for what it is (who the site is, where you can go, what it
+wants you to know, what you came to do, its sections of content and its small
+print) and laid out again from one set of building blocks: header with menus,
+notices, hero, action tiles, steps, cards, topic grids, link lists and feeds,
+forms, tables, contacts, questions, logos and footer, in hairline rails with
+tinted frames, white panels, mono file bars, hatched stages and LT Superior
+Serif headings. Floating widgets (chat bubbles, cookie bars, promos) are left
+out. Titles are never shown in all caps.
+
+The page itself keeps working. Its form fields, captchas and buttons are its
+own live elements moved into the new layout, links and buttons act through the
+page's own elements, and pop-ups it opens are shown above the redesign.
 
 ## Install
 
@@ -47,21 +53,27 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
 
 ## How it works
 
+- `compose.js` reads the page with rules every website follows: landmarks
+  (`header`, `nav`, `main`, `footer`), headings and drawn boxes mark sections,
+  repeated siblings are collections whose shape decides the block (task tiles,
+  steps, cards, topics, link lists, logos, contacts), forms are labelled
+  controls, and anything floating over the page is a widget. Sections are
+  ordered with the page's main task first, then its content, then utilities
+  (link lists, contacts), side by side. The blocks render in `compose.css`.
+- It only composes when the result carries the page's text (it checks how much
+  of the readable text made it in). Web apps (editors, maps, canvases, dense
+  control panels), and pages it can't read fully, are restyled in place
+  instead by `content.js` and `redesign.css`, as below.
+- The original page stays loaded underneath, hidden. When it changes (single
+  page apps, content loading in, a form step), it's read again and the layout
+  updates; never while you're typing in it. "original ↗" in the footer shows
+  the page as the site built it.
+
+Restyling (the fallback):
+
 - `content.js` reads each element once, in the page's own styles, and gives it
   a role: button, field, card, pop-up, backdrop, menu, header bar, section,
   callout, and so on. `redesign.css` gives each role the design.
-- Elements that are hidden when the page loads (closed menus, pop-ups,
-  dropdowns, accordions) are read when they're opened, after any opening
-  animation, so they're redesigned in their open state.
-- New content (infinite scroll, single-page app navigation, pop-ups built on
-  the fly) is redesigned as it appears.
-- After tagging, a layout pass reads where things sit: the width most of the
-  page's centred content shares gets hairline rails; sibling boxes (cards,
-  tiles, grid columns drawn as boxes) become white panels in a tinted frame,
-  with the gutter drawn inside panels that touch so nothing moves; a lone box
-  gets the frame drawn around it. It runs again on resize and page changes.
-- Stylesheets that arrive late (slow servers) trigger a fresh read of the
-  page, so boxes are never judged without the site's own styles.
 - Dark areas (headers, footers, dark panels) stay dark, in ink, so logos and
   icons drawn for them stay visible. Light and coloured areas become white.
 - Maps, photos, videos, illustrations, dark code panels and custom
@@ -88,11 +100,13 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
 
 ## Known limits
 
-- The arrangement of the page is kept as the site built it: nothing is moved
-  or reflowed. Headings grow only where they stay on one line, and frames are
-  drawn in space the page already leaves free.
+- Composition takes the content and order the page has; it doesn't invent
+  content, and section labels it has to add are generic ("Links", "Start here").
 - Content inside cross-site iframes (embedded payment widgets, ads, some
-  login boxes) is a different site; it's redesigned only if it's on too.
+  login boxes) is a different site; it's left out of the composed page and
+  redesigned only if that site is on too.
+- Pictures drawn in HTML that the page doesn't mark as decoration
+  (`aria-hidden`) can come through as content.
 - Browser-native dialogs (`alert`, `confirm`, file pickers) can't be styled.
 - Browsers' own pages (`chrome://…`, `about:…`, the extension stores) and
   PDFs don't allow extensions.
