@@ -25,7 +25,7 @@ export default async function RedesignView({
   if (!url) redirect("/redesign");
   // Always fetched live at request time.
   await connection();
-  const variant: Variant = v === "1" ? "v1" : "v0";
+  const variant: Variant = v === "0" ? "v0" : "v1";
 
   let result: Redesign;
   try {

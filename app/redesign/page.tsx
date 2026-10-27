@@ -79,7 +79,7 @@ export default function RedesignHome() {
                         type="radio"
                         name="v"
                         value={value}
-                        defaultChecked={i === 0}
+                        defaultChecked={i === 1}
                         className="peer sr-only"
                       />
                       <span
@@ -109,7 +109,7 @@ export default function RedesignHome() {
             {examples.map((e) => (
               <Link
                 key={e}
-                href={`/redesign/view?url=${encodeURIComponent(e)}&v=0`}
+                href={`/redesign/view?url=${encodeURIComponent(e)}&v=1`}
                 className="rounded-md bg-gray-950/[0.04] px-2 py-1 font-mono text-xs text-gray-700 ring-1 ring-gray-950/5 ring-inset transition-colors hover:bg-gray-950/[0.07] hover:text-gray-950"
               >
                 {e}

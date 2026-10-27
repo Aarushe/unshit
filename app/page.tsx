@@ -1,12 +1,12 @@
 import { Site } from "@/components/site";
-import { defaultContent } from "@/lib/content";
+import { defaultContentV1 } from "@/lib/content";
 
 export default function Home() {
   return (
     <Site
-      variant="v0"
-      content={defaultContent}
-      links={{ alternate: "/1", action: "#apply" }}
+      variant="v1"
+      content={defaultContentV1}
+      links={{ alternate: "/0", action: "#apply" }}
     />
   );
 }

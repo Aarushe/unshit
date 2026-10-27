@@ -1,17 +1,6 @@
-import type { Metadata } from "next";
-import { Site } from "@/components/site";
-import { defaultContentV1 } from "@/lib/content";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "New Internet Society — v1",
-};
-
+// The serif version is now the main page.
 export default function V1() {
-  return (
-    <Site
-      variant="v1"
-      content={defaultContentV1}
-      links={{ alternate: "/", action: "#apply" }}
-    />
-  );
+  redirect("/");
 }
