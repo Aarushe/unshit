@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-serif: var(--font-superior), ui-serif, Georgia, serif;
+  --font-display: var(--font-inter-display), var(--font-inter), ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+/* Diagonal hatch used for empty / placeholder areas. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    315deg,
+    var(--hatch-color, color-mix(in oklab, var(--color-gray-950) 6%, transparent)) 0,
+    var(--hatch-color, color-mix(in oklab, var(--color-gray-950) 6%, transparent)) 1px,
+    transparent 0,
+    transparent 50%
+  );
+  background-size: 10px 10px;
+}
+
+/* Faint square grid for the /1 canvas. */
+@utility grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.035) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--color-gray-950);
+  color: white;
+}
