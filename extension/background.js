@@ -108,13 +108,15 @@ async function toggle(tab, granted = Promise.resolve(true)) {
   } else {
     // Firefox and Safari let people withhold site access; without it there's nothing to do.
     if (!(await granted)) return;
+    // The clicked tab first, at once; remembering the site and registering it for
+    // later pages happens alongside.
+    const here = apply(tab.id);
     await chrome.storage.local.set({ [KEY]: [...list, host] });
     await register(host);
-    // Apply to the site's pages that are already open, without a reload.
-    const open = await tabsOn(host);
-    if (!open.some((t) => t.id === tab.id)) open.push(tab);
-    await Promise.all(open.map((t) => apply(t.id)));
-    await Promise.all(open.map((t) => badge(t.id, t.url)));
+    // Apply to the site's other pages that are already open, without a reload.
+    const others = (await tabsOn(host)).filter((t) => t.id !== tab.id);
+    await Promise.all([here, ...others.map((t) => apply(t.id))]);
+    await Promise.all(others.map((t) => badge(t.id, t.url)));
   }
   await badge(tab.id, tab.url);
 }

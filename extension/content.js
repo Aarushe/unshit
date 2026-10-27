@@ -13,7 +13,10 @@
   window.__nisRedesign = true;
 
   const html = document.documentElement;
-  html.classList.add("nis-on");
+  // A page about to be composed is read in its own styles first: restyling it
+  // now would only lay the whole page out twice.
+  const composing = window.top === window && !!window.__nisCompose;
+  if (!composing) html.classList.add("nis-on");
 
   // Reads that a page can't shadow: a <form> exposes its fields as properties,
   // so <input name="tagName"> or name="children" would otherwise break the walk.
@@ -1089,19 +1092,21 @@
   }
 
   let layoutTimer = 0;
+  function layoutNow() {
+    clearTimeout(layoutTimer);
+    pause();
+    try {
+      frames();
+      rails();
+    } catch (err) {
+      console.debug("Redesign skipped the layout pass:", err);
+    } finally {
+      reconnect();
+    }
+  }
   function layout() {
     clearTimeout(layoutTimer);
-    layoutTimer = setTimeout(() => {
-      pause();
-      try {
-        frames();
-        rails();
-      } catch (err) {
-        console.debug("Redesign skipped the layout pass:", err);
-      } finally {
-        reconnect();
-      }
-    }, 120);
+    layoutTimer = setTimeout(layoutNow, 120);
   }
 
   /* --------------------------------------------------------------------------
@@ -1277,15 +1282,22 @@
     started = true;
     // Top-level pages are rebuilt from building blocks when they can be read
     // (compose.js); everything else, and pages it declines, is restyled.
-    if (window.top === window && window.__nisCompose) {
+    if (composing) {
       const began = performance.now();
+      let decided = false;
       const decide = () => {
+        if (decided) return;
         // Pages that render in the browser (single-page apps) may still be empty: give them a moment.
         // The page is covered meanwhile, so wait for its own stylesheets (layout decides what's a
         // column, a card or a row) and, for pages that render in the browser, for some content.
         const waited = performance.now() - began;
-        const thin = (document.body.innerText || "").trim().length < 200;
-        if (document.readyState !== "complete" && waited < 5000 && (!stylesheetsReady() || thin)) return setTimeout(decide, 150);
+        if (document.readyState !== "complete" && waited < 5000 && (!stylesheetsReady() || thin())) {
+          // Checked again the moment anything arrives, not on a slow timer.
+          if (!watching) watchArrivals(decide);
+          return;
+        }
+        decided = true;
+        stopWatching?.();
         let composed = false;
         try {
           composed = window.__nisCompose.run(api);
@@ -1344,11 +1356,12 @@
       const done = runStack(stack, document.body, performance.now() + 12);
       reconnect();
       if (!done) return yieldThen(slice);
+      // Frames and rails are drawn with the first paint, so nothing shifts just after.
+      layoutNow();
       html.setAttribute("data-nis-ms", String(Math.round(performance.now() - t0)));
       html.classList.add("nis-ready");
       initialDone = true;
       schedule();
-      layout();
       document.fonts?.ready.then(layout);
       window.addEventListener("resize", layout, { passive: true });
       afterSettled(startCasing);
@@ -1424,6 +1437,48 @@
     }
   }
 
+  /** Less than a couple of sentences of text so far. Counted from text nodes: innerText would lay the page out. */
+  function thin() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n = 0;
+    for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+      const p = t.parentElement;
+      if (p && (p.tagName === "SCRIPT" || p.tagName === "STYLE" || p.tagName === "NOSCRIPT" || p.tagName === "TEMPLATE")) continue;
+      n += t.nodeValue.trim().length;
+      if (n >= 200) return false;
+    }
+    return true;
+  }
+
+  // Waiting on the page: checked as soon as content or a stylesheet arrives, at most once a frame.
+  let watching = null;
+  let stopWatching = null;
+  function watchArrivals(check) {
+    let queued = false;
+    const soon = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        check();
+      });
+    };
+    watching = new MutationObserver(soon);
+    watching.observe(html, { childList: true, subtree: true });
+    const timer = setInterval(check, 50);
+    const onLoad = (e) => e.target instanceof HTMLLinkElement && soon();
+    document.addEventListener("load", onLoad, true);
+    document.addEventListener("error", onLoad, true);
+    document.addEventListener("readystatechange", soon);
+    stopWatching = () => {
+      watching.disconnect();
+      clearInterval(timer);
+      document.removeEventListener("load", onLoad, true);
+      document.removeEventListener("error", onLoad, true);
+      document.removeEventListener("readystatechange", soon);
+    };
+  }
+
   // Start once the page's stylesheets have loaded, so elements are read in their real styles.
   const pendingStylesheets = () =>
     [...document.querySelectorAll('link[rel~="stylesheet"]')].filter((link) => !link.sheet && !link.disabled && link.media !== "print");
@@ -1437,9 +1492,12 @@
       // never wait more than 1.5s on a slow stylesheet.
       const late = Date.now() - began > 1500 && document.body;
       if (document.readyState === "complete" || (parsed && stylesheetsReady()) || late) start();
-      else setTimeout(poll, 100);
+      else setTimeout(poll, parsed ? 25 : 100);
     };
     poll();
+    document.addEventListener("DOMContentLoaded", poll, { once: true });
+    // Each stylesheet that loads may be the last one being waited for.
+    document.addEventListener("load", (e) => e.target instanceof HTMLLinkElement && poll(), true);
     window.addEventListener("load", start, { once: true });
   }
   whenReady();

@@ -50,16 +50,37 @@
    * Reading helpers
    * ------------------------------------------------------------------------ */
 
-  const css = (el) => getComputedStyle(el);
-  const rect = (el) => el.getBoundingClientRect();
+  // A read of the page writes nothing, yet asks about the same elements again and
+  // again (a collection's items are measured, then read, then counted): within
+  // one read, each answer is kept.
+  let memo = null;
+  function reading(fn) {
+    memo = { css: new Map(), rect: new Map(), shown: new Map(), widget: new Map(), text: new Map() };
+    try {
+      return fn();
+    } finally {
+      memo = null;
+    }
+  }
+  const remember = (table, el, compute) => {
+    if (!memo) return compute(el);
+    const m = memo[table];
+    let v = m.get(el);
+    if (v === undefined && !m.has(el)) m.set(el, (v = compute(el)));
+    return v;
+  };
+
+  const css = (el) => remember("css", el, getComputedStyle);
+  const rect = (el) => remember("rect", el, (e) => e.getBoundingClientRect());
   const squash = (s) => s.replace(/\s+/g, " ");
   const words = (s) => (s.trim() ? s.trim().split(/\s+/).length : 0);
-  const vw = () => html.clientWidth || window.innerWidth || 1;
+  const vw = () => (memo ? (memo.vw ??= html.clientWidth || window.innerWidth || 1) : html.clientWidth || window.innerWidth || 1);
 
   let slots = new Map(); // comment placeholder → adopted live element
   const real = (n) => (n.nodeType === 8 && slots.has(n) ? slots.get(n) : n);
-  const nodesOf = (el) => [...el.childNodes].map(real);
-  const elsOf = (el) => nodesOf(el).filter((n) => n.nodeType === 1);
+  // Read-only: without placeholders, the element's own child list, uncopied.
+  const nodesOf = (el) => (slots.size ? [...el.childNodes].map(real) : el.childNodes);
+  const elsOf = (el) => Array.prototype.filter.call(nodesOf(el), (n) => n.nodeType === 1);
   /** querySelectorAll that also finds controls we moved into our layout (through their placeholders). */
   function qsa(el, sel) {
     if (!slots.size) return [...el.querySelectorAll(sel)];
@@ -78,7 +99,8 @@
   // Header and footer parts, read on their own and skipped by the main walk.
   let excluded = new Set();
 
-  function shown(el) {
+  const shown = (el) => remember("shown", el, shownNow);
+  function shownNow(el) {
     if (el.__nisAdopted) return true;
     if (el.getClientRects().length === 0) {
       return css(el).display === "contents";
@@ -95,7 +117,8 @@
   const ident = (el) => `${el.getAttribute("class") || ""} ${el.id || ""}`;
 
   /** Things that float over the page (chat bubbles, promos, cookie bars, feedback tabs) are left out. */
-  function widget(el) {
+  const widget = (el) => remember("widget", el, widgetNow);
+  function widgetNow(el) {
     if (BOILERPLATE.test(ident(el))) return true;
     const cs = css(el);
     if (cs.position !== "fixed" && cs.position !== "sticky") return false;
@@ -124,7 +147,8 @@
     return squash(t).trim();
   }
 
-  function textIn(el) {
+  const textIn = (el) => remember("text", el, textNow);
+  function textNow(el) {
     let t = "";
     const walk = (n) => {
       for (const c of nodesOf(n)) {
@@ -1396,11 +1420,15 @@
     // A tool is the page when it takes most of it, or when the page has little else to read.
     const screen = vw() * window.innerHeight;
     const pageArea = vw() * Math.max(html.scrollHeight, window.innerHeight);
-    const pageWords = words(document.body.innerText || "");
+    // Laying out the page's text to count it is slow: only done for a tool big enough to ask.
+    let pageWords = null;
     const dominant = (el) => {
       if (!shown(el)) return false;
       const a = rect(el).width * rect(el).height;
-      return a > pageArea * 0.5 || (a > screen * 0.35 && pageWords < 250);
+      if (a > pageArea * 0.5) return true;
+      if (a <= screen * 0.35) return false;
+      pageWords ??= words(document.body.innerText || "");
+      return pageWords < 250;
     };
     const tools = document.querySelectorAll('[role=application], [contenteditable=""]:not(body), [contenteditable=true]:not(body), .monaco-editor, .CodeMirror, .cm-editor, .leaflet-container, .mapboxgl-map, .gm-style, canvas');
     if ([...tools].some(dominant)) return true;
@@ -2069,9 +2097,11 @@
       let m;
       let open = [];
       try {
-        open = openDialogs();
-        // Never rebuild under someone's fingers.
-        if (!busy) m = readPage();
+        reading(() => {
+          open = openDialogs();
+          // Never rebuild under someone's fingers.
+          if (!busy) m = readPage();
+        });
       } finally {
         html.classList.add("nis-on", "nis-composed");
         if (root) root.style.display = "";
@@ -2105,23 +2135,28 @@
       return false;
     };
     try {
-      if (appLike()) return decline("app");
       // Read the page in its own styles.
       html.classList.remove("nis-on");
-      api.learnPage();
-      const m = readPage();
-      lastRead = m;
-      const covered = modelText(m);
-      const total = m.mainParts.reduce((n, p) => n + (excluded.has(p) ? 0 : readableText(p).replace(/\s+/g, "").length), 0);
-      html.setAttribute("data-nis-coverage", total ? (covered / total).toFixed(2) : "0");
+      let m, covered, total, open;
+      const app = reading(() => {
+        if (appLike()) return true;
+        api.learnPage();
+        m = readPage();
+        covered = modelText(m);
+        total = m.mainParts.reduce((n, p) => n + (excluded.has(p) ? 0 : readableText(p).replace(/\s+/g, "").length), 0);
+        open = openDialogs();
+        return false;
+      });
       html.classList.add("nis-on");
+      if (app) return decline("app");
+      lastRead = m;
+      html.setAttribute("data-nis-coverage", total ? (covered / total).toFixed(2) : "0");
       // Too big to read in full: restyle rather than show part of it.
       if (budget < 0) return decline("too large");
       if (!m.sections.length && !m.notices.length && !m.hero.lead.length) return decline("empty");
       if (total > 400 && covered < total * 0.55) return decline("coverage");
       model = m;
       signature = signatureOf(m);
-      const open = openDialogs();
       render(m);
       html.classList.add("nis-composed");
       portals(open);
