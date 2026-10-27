@@ -1,0 +1,611 @@
+/*
+ * New Internet Society — page redesign.
+ * Everything is scoped to html.nis-on:not(#nis-a):not(#nis-b). Roles come from content.js (data-nis);
+ * colour and surface rules apply only once an element has been read and tagged.
+ */
+
+@font-face {
+  font-family: "NIS Serif";
+  src: url("chrome-extension://__MSG_@@extension_id__/fonts/LTSuperiorSerif-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "NIS Serif";
+  src: url("chrome-extension://__MSG_@@extension_id__/fonts/LTSuperiorSerif-Medium.otf") format("opentype");
+  font-weight: 500 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "NIS Sans";
+  src: url("chrome-extension://__MSG_@@extension_id__/fonts/InterDisplay-Regular.otf") format("opentype");
+  font-weight: 100 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "NIS Sans";
+  src: url("chrome-extension://__MSG_@@extension_id__/fonts/InterDisplay-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "NIS Sans";
+  src: url("chrome-extension://__MSG_@@extension_id__/fonts/InterDisplay-SemiBold.otf") format("opentype");
+  font-weight: 600 900;
+  font-display: swap;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) {
+  --nis-ink: #030712;
+  --nis-ink-2: rgb(3 7 18 / 0.72);
+  --nis-muted: #6b7280;
+  --nis-faint: #9ca3af;
+  --nis-line: rgb(3 7 18 / 0.08);
+  --nis-line-2: rgb(3 7 18 / 0.16);
+  --nis-tint: rgb(3 7 18 / 0.025);
+  --nis-paper: #ffffff;
+  --nis-paper-2: #f9fafb;
+  --nis-sans: "NIS Sans", "Inter Display", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nis-serif: "NIS Serif", "LT Superior Serif", ui-serif, Georgia, serif;
+  --nis-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  color-scheme: light !important;
+  background: var(--nis-paper) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------------------------------------------------------------------------
+ * Typography — applies immediately, before any tagging.
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) body {
+  background: var(--nis-paper) !important;
+  color: var(--nis-ink) !important;
+  font-family: var(--nis-sans) !important;
+  letter-spacing: 0.1px;
+}
+
+/* Everything inherits the text face, except code and icon fonts. */
+html.nis-on:not(#nis-a):not(#nis-b) body *:not(code, pre, kbd, samp, tt, var, code *, pre *, svg, svg *, i:empty, span:empty,
+  .fa, .fas, .far, .fab, .fal, .fad, .material-icons, .material-icons-outlined, .material-symbols-outlined,
+  .material-symbols-rounded, .glyphicon, .dashicons, .octicon, .bi,
+  [class*="icon"], [class*="Icon"], [class*="fa-"], [class*="glyph"], [class*="symbol"], [data-icon], [aria-hidden="true"]:empty) {
+  font-family: inherit !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) :is(code, pre, kbd, samp, tt) {
+  font-family: var(--nis-mono) !important;
+  font-size: 0.9em;
+}
+
+/* Never shout: casing is fixed in the text itself (content.js). */
+html.nis-on:not(#nis-a):not(#nis-b) body *,
+html.nis-on:not(#nis-a):not(#nis-b) body *::before,
+html.nis-on:not(#nis-a):not(#nis-b) body *::after,
+html.nis-on:not(#nis-a):not(#nis-b) body *::placeholder {
+  text-transform: none !important;
+  font-variant-caps: normal !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-caps] {
+  letter-spacing: normal !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6, [role="heading"], [data-nis="display"]) {
+  font-family: var(--nis-serif) !important;
+  font-weight: 400 !important;
+  font-style: normal;
+  letter-spacing: -0.02em !important;
+  line-height: 1.18 !important;
+  text-wrap: balance;
+}
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, [data-nis="display"]) {
+  letter-spacing: -0.035em !important;
+  line-height: 1.1 !important;
+}
+/* Small headings read better in the text face. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="heading"][data-nis-hsize="small"] {
+  font-family: var(--nis-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) :is(h1, h2, h3, h4, h5, h6) :is(b, strong) {
+  font-weight: inherit !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) :is(p, li, dd, blockquote, figcaption) {
+  line-height: 1.65;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-small] {
+  font-size: 13px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) :is(b, strong) {
+  font-weight: 600;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) ::selection {
+  background: var(--nis-ink);
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------------------
+ * Colour — once an element is tagged, in our near-monochrome palette.
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis]:not([data-nis="media"], [data-nis="media-bg"], [data-nis-in~="media"], [data-nis-in~="ink"]) {
+  color: var(--nis-ink) !important;
+  border-color: var(--nis-line) !important;
+  text-shadow: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-muted]:not([data-nis-in~="media"], [data-nis-in~="ink"], [data-nis="btn"]) {
+  color: var(--nis-muted) !important;
+}
+
+/* Surfaces are transparent by default; roles below paint the ones that matter. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis]:is([data-nis="plain"], [data-nis="text"], [data-nis="link"], [data-nis="heading"],
+  [data-nis="display"], [data-nis="nav"], [data-nis="dialog-wrap"], [data-nis="rule"], [data-nis="file"]):not([data-nis-in~="media"]) {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Wide painted areas: white, separated by hairlines. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="section"]:not([data-nis-in~="media"]) {
+  background: var(--nis-paper) !important;
+  box-shadow: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="section"][data-nis-tone="alt"]:not([data-nis-in~="media"]) {
+  background: var(--nis-paper-2) !important;
+  box-shadow: inset 0 1px 0 var(--nis-line), inset 0 -1px 0 var(--nis-line) !important;
+}
+
+/* Header and navigation bars. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="bar"]:not([data-nis-in~="media"]) {
+  background: rgb(255 255 255 / 0.92) !important;
+  background-image: none !important;
+  box-shadow: 0 1px 0 var(--nis-line) !important;
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="bar"]:not([data-nis-in~="media"], [data-nis="btn"], [data-nis="field"], [data-nis="fieldbox"], [data-nis="modal"], [data-nis="overlay"], [data-nis-menu], [data-nis-tone="dark"], [data-nis-in~="dialog"]) {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="bar"] a[data-nis="link"] {
+  color: var(--nis-ink-2) !important;
+  text-decoration: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="bar"] a[data-nis="link"]:hover {
+  color: var(--nis-ink) !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="footer"]:not([data-nis-in~="media"]) {
+  background: var(--nis-paper-2) !important;
+  background-image: none !important;
+  box-shadow: inset 0 1px 0 var(--nis-line) !important;
+  color: var(--nis-muted) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="footer"] [data-nis]:not([data-nis-in~="media"], [data-nis-in~="dark"], [data-nis="btn"], [data-nis="field"], [data-nis="heading"]) {
+  color: var(--nis-muted) !important;
+}
+
+/* Painted areas often carry their colour on a decorative ::before/::after layer. */
+html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis="bar"], [data-nis="section"], [data-nis="footer"], [data-nis="card"], [data-nis="modal"])::before,
+html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis="bar"], [data-nis="section"], [data-nis="footer"], [data-nis="card"], [data-nis="modal"])::after {
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Cards: white panels on a hairline frame. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"]:not([data-nis-in~="media"]) {
+  background: var(--nis-paper) !important;
+  background-image: none !important;
+  border-color: var(--nis-line) !important;
+  border-radius: max(12px, var(--nis-r, 0px)) !important;
+  box-shadow: 0 0 0 1px var(--nis-line), 0 1px 2px rgb(3 7 18 / 0.04) !important;
+}
+
+/* Callouts keep a pale echo of their original hue and a dark rule. */
+html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis="card"], [data-nis="section"])[data-nis-tone="note"]:not([data-nis-in~="media"]) {
+  background: color-mix(in srgb, var(--nis-note, #f3f4f6) 28%, white) !important;
+  box-shadow: inset 3px 0 0 var(--nis-ink), 0 0 0 1px var(--nis-line) !important;
+  border-radius: 10px !important;
+}
+
+/* Inside header/nav bars, surfaces are drawn flat (popovers excepted). */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="bar"]:is([data-nis="card"], [data-nis="section"]):not([data-nis-menu], [data-nis-tone="dark"], [data-nis-in~="media"]) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="chip"]:not([data-nis-in~="media"]) {
+  background: rgb(3 7 18 / 0.05) !important;
+  background-image: none !important;
+  color: var(--nis-ink-2) !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+}
+
+/* Links in running text. */
+html.nis-on:not(#nis-a):not(#nis-b) :is(p, li, dd, td, blockquote, figcaption, label, small, [data-nis="text"]) > a[data-nis="link"]:not([data-nis-in~="media"], [data-nis-in~="ink"], [data-nis-in~="dark"]),
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="text"] a[data-nis="link"]:not([data-nis-in~="media"], [data-nis-in~="bar"], [data-nis-in~="dark"]) {
+  color: var(--nis-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--nis-line-2) !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 3px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) a[data-nis="link"]:hover {
+  text-decoration-color: rgb(3 7 18 / 0.5) !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"] {
+  border-radius: 9999px !important;
+  font-family: var(--nis-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  background-image: none !important;
+  text-decoration: none !important;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s !important;
+  cursor: pointer;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"]:is(button, input) {
+  font-size: max(14px, 0.875em) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"][data-nis-pad] {
+  padding: 7px 16px !important;
+  min-height: 34px;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"][data-nis-tone="primary"] {
+  background-color: var(--nis-ink) !important;
+  color: #fff !important;
+  border-color: var(--nis-ink) !important;
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.12) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"][data-nis-tone="primary"]:hover {
+  background-color: #1f2937 !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="ink"]:not([data-nis="btn"]) {
+  color: #fff !important;
+  background-color: transparent !important;
+  border-color: rgb(255 255 255 / 0.2) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"]:is([data-nis-tone="secondary"], [data-nis-tone="ghost"]) {
+  background-color: var(--nis-paper) !important;
+  color: var(--nis-ink) !important;
+  border-color: var(--nis-line-2) !important;
+  box-shadow: 0 0 0 1px var(--nis-line), 0 1px 2px rgb(3 7 18 / 0.05) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"][data-nis-tone="ghost"] {
+  box-shadow: none !important;
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"]:is([data-nis-tone="secondary"], [data-nis-tone="ghost"]):hover {
+  background-color: var(--nis-paper-2) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"]:disabled,
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"][aria-disabled="true"] {
+  opacity: 0.45 !important;
+  cursor: not-allowed;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="btn"] [data-nis="media"] {
+  filter: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Forms
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"] {
+  background-color: var(--nis-paper) !important;
+  background-image: none;
+  color: var(--nis-ink) !important;
+  border: 1px solid rgb(3 7 18 / 0.2) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.04) !important;
+  font-family: var(--nis-sans) !important;
+  font-size: max(14px, 1em) !important;
+  min-height: 36px;
+  padding-inline: max(10px, var(--nis-pad, 0px));
+  outline: none !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5 6.5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 16px !important;
+  padding-right: 30px !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"][multiple],
+html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"][size]:not([size="1"]) {
+  background-image: none !important;
+  padding-right: 10px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) textarea[data-nis="field"] {
+  padding-block: 8px;
+  line-height: 1.5;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"]:hover {
+  border-color: rgb(3 7 18 / 0.22) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"]:focus {
+  border-color: rgb(3 7 18 / 0.4) !important;
+  box-shadow: 0 0 0 3px rgb(3 7 18 / 0.08) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"]::placeholder {
+  color: var(--nis-faint) !important;
+  opacity: 1;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"]:disabled,
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"][readonly] {
+  background-color: var(--nis-paper-2) !important;
+  color: var(--nis-muted) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"]:user-invalid {
+  border-color: #b91c1c !important;
+}
+/* Inputs inside a drawn box: the box is the field. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field-bare"] {
+  color: var(--nis-ink) !important;
+  font-family: var(--nis-sans) !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field-bare"]::placeholder {
+  color: var(--nis-faint) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="fieldbox"]:not([data-nis-in~="media"]) {
+  background: var(--nis-paper) !important;
+  background-image: none !important;
+  border: 1px solid var(--nis-line-2) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgb(3 7 18 / 0.04) !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="fieldbox"][data-nis-round] {
+  border-radius: 9999px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="fieldbox"]:focus-within {
+  border-color: rgb(3 7 18 / 0.4) !important;
+  box-shadow: 0 0 0 3px rgb(3 7 18 / 0.08) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="fieldbox"] :focus-visible {
+  outline: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="icon-btn"] {
+  text-decoration: none !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="check"] {
+  accent-color: var(--nis-ink) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="file"]::file-selector-button {
+  font-family: var(--nis-sans);
+  font-weight: 600;
+  border: 0;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  margin-right: 10px;
+  background: var(--nis-ink);
+  color: #fff;
+  cursor: pointer;
+}
+html.nis-on:not(#nis-a):not(#nis-b) label[data-nis] {
+  font-weight: 500;
+}
+html.nis-on:not(#nis-a):not(#nis-b) fieldset[data-nis] {
+  border-color: var(--nis-line) !important;
+  border-radius: 12px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) legend[data-nis] {
+  font-weight: 600;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) :focus-visible {
+  outline: 2px solid rgb(3 7 18 / 0.35) !important;
+  outline-offset: 2px !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pop-ups
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="overlay"] {
+  background-color: rgb(3 7 18 / 0.32) !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="modal"] {
+  background-color: var(--nis-paper) !important;
+  background-image: none !important;
+  color: var(--nis-ink) !important;
+  border-color: transparent !important;
+  border-radius: 16px !important;
+  /* The stacked frame: panel, tinted ring, hairline, then depth. */
+  box-shadow:
+    0 0 0 1px var(--nis-line),
+    0 0 0 7px rgb(249 250 251 / 0.92),
+    0 0 0 8px var(--nis-line),
+    0 24px 48px -12px rgb(3 7 18 / 0.28) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) dialog[data-nis="modal"]::backdrop {
+  background: rgb(3 7 18 / 0.32);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+/* Pop-up header and footer strips. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dialog"]:is([class*="header"], [class*="Header"], [class*="title-bar"], [class*="titlebar"]):not([data-nis="btn"]) {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: inset 0 -1px 0 var(--nis-line) !important;
+  border-color: var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dialog"]:is([class*="footer"], [class*="Footer"]):not([data-nis="btn"]) {
+  background-color: transparent !important;
+  box-shadow: inset 0 1px 0 var(--nis-line) !important;
+  border-color: var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dialog"]:is([data-nis="section"], [data-nis="card"]) {
+  border-radius: 10px !important;
+}
+
+/* Menus and dropdowns that open on demand. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-menu]:not([data-nis-in~="media"]) {
+  background-color: var(--nis-paper) !important;
+  background-image: none !important;
+  border: 1px solid var(--nis-line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px -8px rgb(3 7 18 / 0.18), 0 0 0 1px var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis]:is([role="menuitem"], [role="option"]):hover {
+  background-color: rgb(3 7 18 / 0.04) !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tables, code, media, rules
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] {
+  border-collapse: collapse !important;
+  background: var(--nis-paper) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] :is(th, td) {
+  border-color: var(--nis-line) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] th[data-nis] {
+  color: var(--nis-muted) !important;
+  font-weight: 500 !important;
+  font-family: var(--nis-mono) !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] tr:hover > td[data-nis] {
+  background-color: rgb(3 7 18 / 0.02) !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="code"]:not([data-nis-in~="media"]) {
+  background-color: rgb(3 7 18 / 0.04) !important;
+  color: var(--nis-ink) !important;
+  border-radius: 6px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) pre[data-nis="code"] {
+  border: 1px solid var(--nis-line) !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  background-color: var(--nis-paper-2) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) pre[data-nis="code"] code {
+  background: transparent !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) img[data-nis-img="content"] {
+  border-radius: 10px;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="rule"] {
+  border: 0 !important;
+  border-top: 1px solid var(--nis-line) !important;
+  background: none !important;
+  height: 0 !important;
+}
+
+/* Scrollbars */
+html.nis-on:not(#nis-a):not(#nis-b) {
+  scrollbar-color: rgb(3 7 18 / 0.2) transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pages with no styling of their own: a readable column.
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b).nis-bare body {
+  max-width: 44rem !important;
+  margin: 0 auto !important;
+  padding: 56px 24px 96px !important;
+  font-size: 17px !important;
+  line-height: 1.7 !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b).nis-bare body :is(p, label, fieldset, form > div) {
+  margin-block: 0 14px;
+}
+html.nis-on:not(#nis-a):not(#nis-b).nis-bare body font {
+  font-size: inherit !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b).nis-bare body label[data-nis] {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark surfaces stay dark, as ink, so logos and icons drawn for them stay
+ * visible. Text, links and buttons on them invert.
+ * ------------------------------------------------------------------------- */
+
+html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis="bar"], [data-nis="section"], [data-nis="footer"], [data-nis="card"], [data-nis="chip"], [data-nis="plain"], [data-nis="nav"], [data-nis="fieldbox"])[data-nis-tone="dark"]:not([data-nis-in~="media"]) {
+  background: var(--nis-ink) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border-color: rgb(255 255 255 / 0.12) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="bar"][data-nis-tone="dark"]:not([data-nis-in~="media"]) {
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.08) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-tone="dark"]:not([data-nis-in~="media"]) {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 1px 2px rgb(3 7 18 / 0.2) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"]:not([data-nis="media"], [data-nis="media-bg"], [data-nis-in~="media"], [data-nis-in~="ink"], [data-nis="btn"], [data-nis="field"], [data-nis="fieldbox"], [data-nis="field-bare"]):not(:is([data-nis="card"], [data-nis="section"], [data-nis="chip"], [data-nis="fieldbox"], [data-nis="modal"], [data-nis="bar"], [data-nis="footer"]):not([data-nis-tone="dark"])) {
+  color: rgb(255 255 255 / 0.92) !important;
+  border-color: rgb(255 255 255 / 0.14) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis-muted]:not([data-nis-in~="media"], [data-nis-in~="ink"]):not(:is([data-nis="card"], [data-nis="section"], [data-nis="chip"], [data-nis="fieldbox"], [data-nis="modal"], [data-nis="bar"], [data-nis="footer"]):not([data-nis-tone="dark"])) {
+  color: rgb(255 255 255 / 0.62) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) a[data-nis="link"][data-nis-in~="dark"]:not([data-nis-in~="media"]) {
+  color: rgb(255 255 255 / 0.85) !important;
+  text-decoration-color: rgb(255 255 255 / 0.3) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) a[data-nis="link"][data-nis-in~="dark"]:hover {
+  color: #fff !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis="btn"][data-nis-tone="primary"] {
+  background-color: #fff !important;
+  color: var(--nis-ink) !important;
+  border-color: #fff !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis="btn"][data-nis-tone="primary"]:hover {
+  background-color: #e5e7eb !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis="btn"]:is([data-nis-tone="secondary"], [data-nis-tone="ghost"]) {
+  background-color: transparent !important;
+  color: #fff !important;
+  border-color: rgb(255 255 255 / 0.25) !important;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis="btn"][data-nis-tone="ghost"] {
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="dark"][data-nis="btn"]:is([data-nis-tone="secondary"], [data-nis-tone="ghost"]):hover {
+  background-color: rgb(255 255 255 / 0.08) !important;
+}
+
+/* Dark popovers (menus opened from dark bars) stay dark. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-menu][data-nis-tone="dark"]:not([data-nis-in~="media"]) {
+  background: var(--nis-ink) !important;
+  color: #fff !important;
+  border-color: rgb(255 255 255 / 0.12) !important;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 16px 40px -12px rgb(3 7 18 / 0.5) !important;
+}

@@ -1,5 +1,6 @@
 import "server-only";
 import { parse, type HTMLElement, type Node } from "node-html-parser";
+import { fixCase, learnCasing, type CaseDictionary } from "./casing";
 
 // Reads a web page into an ordered list of content blocks — the page's own
 // words, links, images, tables and forms, nothing added — so it can be
@@ -609,6 +610,26 @@ function group(blocks: Block[], cards: boolean): Section[] {
   return merged.filter((s) => s.heading || s.items.length);
 }
 
+/** Titles are never all caps: rewrite shouted headings, labels and lines. */
+function recase(b: Block, dict: CaseDictionary) {
+  const line = (c: Inline[]) => {
+    if (c.length && fixCase(textOf(c), dict) !== textOf(c)) c.forEach((s) => (s.t = fixCase(s.t, dict)));
+  };
+  if (b.k === "h") b.text = fixCase(b.text, dict);
+  if (b.k === "p" || b.k === "quote") line(b.c);
+  if (b.k === "list") b.items.forEach((it) => line(it.c));
+  if (b.k === "rows") b.items.forEach((it) => line(it.main));
+  if (b.k === "table") b.head = b.head.map((h) => fixCase(h, dict));
+  if (b.k === "form") {
+    b.submit = fixCase(b.submit, dict);
+    b.fields.forEach((f) => (f.label = fixCase(f.label, dict)));
+  }
+  if (b.k === "details") {
+    b.summary = fixCase(b.summary, dict);
+    b.blocks.forEach((x) => recase(x, dict));
+  }
+}
+
 /* ----------------------------------------------------------------------------
  * Entry
  * ------------------------------------------------------------------------- */
@@ -627,6 +648,7 @@ export function readPage(html: string, url: URL): Page {
     (titleParts.length > 1 ? [...titleParts].sort((a, b) => a.length - b.length)[0] : host);
 
   const body = doc.querySelector("body") ?? doc;
+  const casing = learnCasing(`${title} ${body.textContent}`);
   const reader = new Reader(base);
   body.querySelectorAll("label[for]").forEach((l) => reader.labels.set(l.getAttribute("for")!, clean(l.text)));
   for (const opener of body.querySelectorAll("[data-target], [data-bs-target], a[href^='#']")) {
@@ -702,13 +724,15 @@ export function readPage(html: string, url: URL): Page {
         ? "article"
         : "page";
 
+  for (const b of blocks) recase(b, casing);
+  reader.dialogs.forEach((b) => recase(b, casing));
   return {
     url: url.toString(),
     host,
-    siteName,
-    title: pageTitle,
+    siteName: fixCase(siteName, casing),
+    title: fixCase(pageTitle, casing),
     lead,
-    nav,
+    nav: nav.map((n) => ({ ...n, label: fixCase(n.label, casing) })),
     kind,
     // Dialog content follows everything visible, as it does for a visitor.
     sections: [...group(blocks, kind === "page"), ...(reader.dialogs.length ? [{ items: reader.dialogs }] : [])],
