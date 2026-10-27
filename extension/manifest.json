@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Clarity — a calmer web",
+  "version": "0.1.0",
+  "description": "A reversible, local redesign of httpbin’s demo order form. No AI, tracking or external processing.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {"default_title": "Clarity", "default_popup": "popup.html"}
+}

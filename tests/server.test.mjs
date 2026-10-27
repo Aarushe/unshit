@@ -1,0 +1,14 @@
+import http from 'node:http';
+import {test, after} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {server} from '../dev-server.mjs';
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const base=`http://127.0.0.1:${server.address().port}`;
+after(()=>server.close());
+test('Only temporary user-activated extension permissions',async()=>{const m=JSON.parse(await fs.readFile('extension/manifest.json'));assert.deepEqual(m.permissions,['activeTab','scripting']);assert.equal(m.manifest_version,3);assert.equal(m.host_permissions,undefined);});
+test('Preview uses the actual extension engine and local form action',async()=>{const s=await(await fetch(base+'/forms/post')).text();assert.match(s,/extension\/core.js/);assert.match(s,/action="\/post"/);assert.match(s,/name="custemail"/);});
+test('Native local endpoint echoes repeated field names',async()=>{const res=await fetch(base+'/post',{method:'POST',body:new URLSearchParams([['topping','bacon'],['topping','cheese']])});const s=await res.text();assert.match(s,/bacon/);assert.match(s,/cheese/);});
+test('Development server rejects foreign Host headers',async()=>{const status=await new Promise((resolve,reject)=>{http.get(base,{headers:{Host:'evil.example'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject);});assert.equal(status,403);});
+test('Source and backups are not publicly served',async()=>{assert.equal((await fetch(base+'/package.json')).status,404);assert.equal((await fetch(base+'/dev-server.mjs')).status,404);});
+test('Form engine contains no outbound communication or storage APIs',async()=>{for(const f of ['extension/core.js','extension/adapters/httpbin.js']){const s=await fs.readFile(f,'utf8');assert.doesNotMatch(s,/\b(fetch|XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage)\b/);}});
