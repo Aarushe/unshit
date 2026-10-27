@@ -44,6 +44,9 @@ export type Section = { heading?: string; items: Item[] };
 export type Page = {
   url: string;
   host: string;
+  /** The page's language and direction, so the redesign reads and wraps like the original. */
+  lang?: string;
+  dir: "ltr" | "rtl";
   siteName: string;
   title: string;
   lead: Inline[] | null;
@@ -610,10 +613,34 @@ function group(blocks: Block[], cards: boolean): Section[] {
   return merged.filter((s) => s.heading || s.items.length);
 }
 
+const RTL_LANGS = /^(ar|arc|ckb|dv|fa|he|iw|ks|ku-arab|ps|sd|syr|ug|ur|yi)(-|$)/i;
+
+/** The page's text, one text node at a time, for learning how it spells words. */
+function textPieces(root: Node): string[] {
+  const out: string[] = [];
+  const visit = (n: Node) => {
+    if (n.nodeType === TEXT) {
+      const t = n.text.trim();
+      if (t) out.push(t);
+    } else if (isEl(n) && !["script", "style", "noscript", "code", "pre", "template"].includes(tag(n))) {
+      n.childNodes.forEach(visit);
+    }
+  };
+  visit(root);
+  return out;
+}
+
 /** Titles are never all caps: rewrite shouted headings, labels and lines. */
 function recase(b: Block, dict: CaseDictionary) {
   const line = (c: Inline[]) => {
-    if (c.length && fixCase(textOf(c), dict) !== textOf(c)) c.forEach((s) => (s.t = fixCase(s.t, dict)));
+    // Decide on the whole line, then rewrite each piece ("WELCOME TO <b>NASA</b>").
+    if (!c.length || fixCase(textOf(c), dict) === textOf(c)) return;
+    let first = true;
+    for (const s of c) {
+      if (s.code) continue;
+      s.t = fixCase(s.t, dict, { force: true, first });
+      if (/\p{L}/u.test(s.t)) first = false;
+    }
   };
   if (b.k === "h") b.text = fixCase(b.text, dict);
   if (b.k === "p" || b.k === "quote") line(b.c);
@@ -648,7 +675,16 @@ export function readPage(html: string, url: URL): Page {
     (titleParts.length > 1 ? [...titleParts].sort((a, b) => a.length - b.length)[0] : host);
 
   const body = doc.querySelector("body") ?? doc;
-  const casing = learnCasing(`${title} ${body.textContent}`);
+  const htmlEl = doc.querySelector("html");
+  const lang =
+    clean(htmlEl?.getAttribute("lang") ?? htmlEl?.getAttribute("xml:lang") ?? "") ||
+    clean(doc.querySelector('meta[http-equiv="content-language" i]')?.getAttribute("content") ?? "").split(",")[0] ||
+    clean(body.getAttribute?.("lang") ?? "") ||
+    undefined;
+  const dirAttr = (htmlEl?.getAttribute("dir") ?? body.getAttribute?.("dir") ?? "").toLowerCase();
+  const dir: Page["dir"] =
+    dirAttr === "rtl" || (dirAttr !== "ltr" && RTL_LANGS.test(lang ?? "")) ? "rtl" : "ltr";
+  const casing = learnCasing([title, ...textPieces(body)], lang);
   const reader = new Reader(base);
   body.querySelectorAll("label[for]").forEach((l) => reader.labels.set(l.getAttribute("for")!, clean(l.text)));
   for (const opener of body.querySelectorAll("[data-target], [data-bs-target], a[href^='#']")) {
@@ -729,6 +765,8 @@ export function readPage(html: string, url: URL): Page {
   return {
     url: url.toString(),
     host,
+    lang,
+    dir,
     siteName: fixCase(siteName, casing),
     title: fixCase(pageTitle, casing),
     lead,

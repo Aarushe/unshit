@@ -126,6 +126,29 @@ function decoded(res: IncomingMessage): NodeJS.ReadableStream {
   }
 }
 
+/**
+ * Decodes the page in its own character set (Shift_JIS, GBK, Windows-1251…), as
+ * a browser would: byte-order mark, then the HTTP header, then <meta charset>
+ * in the first 4 KB, then UTF-8.
+ */
+function decode(bytes: Buffer, contentType: string): string {
+  const head = bytes.subarray(0, 4096).toString("latin1");
+  const label =
+    (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf && "utf-8") ||
+    (bytes[0] === 0xff && bytes[1] === 0xfe && "utf-16le") ||
+    (bytes[0] === 0xfe && bytes[1] === 0xff && "utf-16be") ||
+    /charset\s*=\s*["']?([\w.:-]+)/i.exec(contentType)?.[1] ||
+    /<meta[^>]+charset\s*=\s*["']?([\w.:-]+)/i.exec(head)?.[1] ||
+    "utf-8";
+  try {
+    // A page that claims UTF-16 in a <meta> is really ASCII-compatible (as browsers assume).
+    const fromMeta = /^utf-?16/i.test(label) && bytes[0] !== 0xff && bytes[0] !== 0xfe;
+    return new TextDecoder(fromMeta ? "utf-8" : label).decode(bytes);
+  } catch {
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+}
+
 export async function fetchPage(input: string): Promise<{ url: URL; html: string }> {
   let url = normaliseUrl(input);
 
@@ -158,7 +181,7 @@ export async function fetchPage(input: string): Promise<{ url: URL; html: string
       if (size >= MAX_BYTES) break;
     }
     res.destroy();
-    return { url, html: Buffer.concat(chunks).toString("utf8") };
+    return { url, html: decode(Buffer.concat(chunks), res.headers["content-type"] ?? "") };
   }
 
   throw new FetchPageError("Too many redirects.");

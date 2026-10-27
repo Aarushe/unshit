@@ -34,72 +34,77 @@ export function Redesigned({
   return (
     <div className={`overflow-x-clip ${t.root}`}>
       {banner}
-      <header className="sticky top-0 z-20 border-b border-gray-950/5 bg-white/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
-          <A href={page.url} ctx={ctx} className={`truncate ${t.name}`}>
-            {page.siteName}
-          </A>
-          {page.nav.length > 0 && (
-            <nav className="hidden min-w-0 items-center gap-6 overflow-hidden md:flex">
-              {page.nav.map((n) => (
-                <A
-                  key={n.href}
-                  href={n.href}
-                  ctx={ctx}
-                  className="shrink-0 text-sm/6 text-gray-600 transition-colors hover:text-gray-950"
-                >
-                  {n.label}
-                </A>
-              ))}
-            </nav>
-          )}
-        </div>
-      </header>
+      {/* The page's own language and direction: right-to-left pages read right to left. */}
+      <div lang={page.lang} dir={page.dir}>
+        <header className="sticky top-0 z-20 border-b border-gray-950/5 bg-white/85 backdrop-blur-md">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
+            <A href={page.url} ctx={ctx} className={`truncate ${t.name}`}>
+              {page.siteName}
+            </A>
+            {page.nav.length > 0 && (
+              <nav className="hidden min-w-0 items-center gap-6 overflow-hidden md:flex">
+                {page.nav.map((n) => (
+                  <A
+                    key={n.href}
+                    href={n.href}
+                    ctx={ctx}
+                    className="shrink-0 text-sm/6 text-gray-600 transition-colors hover:text-gray-950"
+                  >
+                    {n.label}
+                  </A>
+                ))}
+              </nav>
+            )}
+          </div>
+        </header>
 
-      <main>
-        <div className="h-10 sm:h-16" />
-        <Annotation>{`${page.host}   ·   ${page.kind}`}</Annotation>
-        <Rail className="px-4 py-2 sm:px-6">
-          <h1 className={`text-balance ${ctx.article ? "mx-auto max-w-[680px]" : "max-w-5xl"} ${long || ctx.article ? t.h2 : t.h1}`}>
-            {page.title}
-          </h1>
-        </Rail>
-        {page.lead && (
-          <Rail className="px-4 py-3 sm:px-6">
-            <p className={`${ctx.article ? "mx-auto max-w-[680px]" : "max-w-2xl"} ${t.lead}`}>
-              <Inlines c={page.lead} ctx={ctx} />
-            </p>
+        <main>
+          <div className="h-10 sm:h-16" />
+          <Annotation>{`${page.host}   ·   ${page.kind}`}</Annotation>
+          <Rail className="px-4 py-2 sm:px-6">
+            <h1 className={`text-balance ${ctx.article ? "mx-auto max-w-[680px]" : "max-w-5xl"} ${long || ctx.article ? t.h2 : t.h1}`}>
+              {page.title}
+            </h1>
           </Rail>
-        )}
-
-        {page.sections.map((s, i) =>
-          ctx.article ? (
-            <Rail key={i} className="px-4 py-8 sm:px-6 sm:py-10">
-              <div className="mx-auto max-w-[680px]">
-                {s.heading && <h2 className={`mb-5 ${t.h2} text-[1.75rem]/[1.2] sm:text-[2rem]/[1.2]`}>{s.heading}</h2>}
-                <Flow items={s.items} ctx={ctx} />
-              </div>
+          {page.lead && (
+            <Rail className="px-4 py-3 sm:px-6">
+              <p className={`${ctx.article ? "mx-auto max-w-[680px]" : "max-w-2xl"} ${t.lead}`}>
+                <Inlines c={page.lead} ctx={ctx} />
+              </p>
             </Rail>
-          ) : (
-            <section key={i}>
-              {s.heading && (
-                <>
-                  <Gap />
-                  <Rail className="px-4 py-2 sm:px-6">
-                    <h2 className={`max-w-3xl text-balance ${t.h2}`}>{s.heading}</h2>
-                  </Rail>
-                </>
-              )}
-              <Wide items={s.items} ctx={ctx} />
-            </section>
-          ),
-        )}
-        <div className="h-16 border-t border-gray-950/5 sm:h-24" />
-      </main>
+          )}
+
+          {page.sections.map((s, i) =>
+            ctx.article ? (
+              <Rail key={i} className="px-4 py-8 sm:px-6 sm:py-10">
+                <div className="mx-auto max-w-[680px]">
+                  {s.heading && <h2 className={`mb-5 ${t.h2} text-[1.75rem]/[1.2] sm:text-[2rem]/[1.2]`}>{s.heading}</h2>}
+                  <Flow items={s.items} ctx={ctx} />
+                </div>
+              </Rail>
+            ) : (
+              <section key={i}>
+                {s.heading && (
+                  <>
+                    <Gap />
+                    <Rail className="px-4 py-2 sm:px-6">
+                      <h2 className={`max-w-3xl text-balance ${t.h2}`}>{s.heading}</h2>
+                    </Rail>
+                  </>
+                )}
+                <Wide items={s.items} ctx={ctx} />
+              </section>
+            ),
+          )}
+          <div className="h-16 border-t border-gray-950/5 sm:h-24" />
+        </main>
+      </div>
 
       <footer className="border-t border-gray-950/5">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 border-x border-gray-950/5 px-4 py-8 sm:px-6">
-          <span className={t.name}>{page.siteName}</span>
+          <span lang={page.lang} dir="auto" className={t.name}>
+            {page.siteName}
+          </span>
           <div className="flex gap-6 font-mono text-xs/6 text-gray-500">
             <a href={page.url} target="_blank" rel="noreferrer" className="hover:text-gray-950">
               original ↗
@@ -344,7 +349,7 @@ function BlockView({ item, ctx }: { item: Item; ctx: Ctx }) {
 
     case "quote":
       return (
-        <blockquote className={`border-l-2 border-gray-950 py-1 pl-5 ${quoteStyle[v]}`}>
+        <blockquote className={`border-s-2 border-gray-950 py-1 ps-5 ${quoteStyle[v]}`}>
           <Inlines c={item.c} ctx={ctx} />
         </blockquote>
       );

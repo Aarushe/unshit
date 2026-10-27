@@ -36,3 +36,19 @@ html {
   background: var(--color-gray-950);
   color: white;
 }
+
+/*
+ * Redesigned pages keep the source page's language. Scripts that join or stack
+ * letters (Arabic, Hebrew, Indic, Thai…) and CJK lose tight tracking, and get
+ * taller lines so marks above and below aren't clipped.
+ */
+:is(:lang(ar), :lang(fa), :lang(ur), :lang(ps), :lang(he), :lang(yi), :lang(hi), :lang(mr), :lang(ne), :lang(bn),
+  :lang(pa), :lang(gu), :lang(ta), :lang(te), :lang(kn), :lang(ml), :lang(si), :lang(th), :lang(lo), :lang(km),
+  :lang(my), :lang(bo), :lang(ja), :lang(zh), :lang(ko)) :where(*) {
+  letter-spacing: normal !important;
+}
+:is(:lang(ar), :lang(fa), :lang(ur), :lang(ps), :lang(hi), :lang(mr), :lang(ne), :lang(bn), :lang(pa), :lang(gu),
+  :lang(ta), :lang(te), :lang(kn), :lang(ml), :lang(si), :lang(th), :lang(lo), :lang(km), :lang(my), :lang(bo))
+  :where(h1, h2, h3, h4, h5, h6, p, li, summary, a) {
+  line-height: 1.6 !important;
+}

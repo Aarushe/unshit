@@ -26,7 +26,10 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
   },
   "permissions": [
     "scripting",
@@ -45,5 +48,20 @@
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "redesign@newinternetsociety.org",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    },
+    "safari": {
+      "strict_min_version": "17.0"
+    }
+  },
+  "minimum_chrome_version": "111"
 }
