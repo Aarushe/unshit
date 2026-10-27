@@ -28,7 +28,8 @@ export type Block =
   | { k: "table"; head: string[]; rows: Inline[][][] }
   | { k: "img"; src: string; alt: string; caption: string }
   | { k: "form"; action: string; method: string; fields: Field[]; submit: string }
-  | { k: "details"; summary: string; c: Inline[] }
+  /** Collapsible content: <details>, and pop-up dialogs the page opens from buttons. */
+  | { k: "details"; summary: string; blocks: Block[]; id?: string }
   | { k: "hr" }
   /** Figure + label pairs that the page lays out as stats. */
   | { k: "stats"; items: { value: string; label: Inline[] }[] }
@@ -82,6 +83,19 @@ function hidden(el: HTMLElement): boolean {
   return /\b(sr-only|visually-hidden|screen-reader-text)\b/.test(cls) || BOILERPLATE.test(cls);
 }
 
+const DIALOG = /(^|\s)(modal|popup|lightbox|dialog)(\s|$)/i;
+const PROMO = /cookie|consent|gdpr|newsletter|subscribe|sign-?up-?popup/i;
+
+/** Pop-ups the page opens from a button. Their content is real, just hidden until clicked. */
+function isDialog(el: HTMLElement): boolean {
+  const role = el.getAttribute("role");
+  const cls = el.getAttribute("class") ?? "";
+  if (!(tag(el) === "dialog" || role === "dialog" || role === "alertdialog" || DIALOG.test(cls))) return false;
+  return !PROMO.test(`${cls} ${el.id ?? ""} ${el.text.slice(0, 300)}`);
+}
+
+export const dialogAnchor = (id: string) => `dialog-${id.replace(/[^\w-]/g, "")}`;
+
 function absolute(href: string | undefined, base: URL): string | undefined {
   if (!href) return undefined;
   try {
@@ -131,6 +145,10 @@ const MAX_BLOCKS = 900;
 class Reader {
   blocks: Block[] = [];
   labels = new Map<string, string>();
+  /** Text of the buttons/links that open each dialog, by dialog id. */
+  openers = new Map<string, string>();
+  /** Dialog content, kept apart: it is hidden until clicked on the original. */
+  dialogs: Block[] = [];
   constructor(private base: URL) {}
 
   full() {
@@ -151,8 +169,17 @@ class Reader {
     }
     const next = { ...fmt };
     if (name === "a") {
-      const href = absolute(node.getAttribute("href"), this.base);
+      const target = node.getAttribute("data-bs-target") ?? node.getAttribute("data-target") ?? "";
+      const href = target.startsWith("#") ? `#${dialogAnchor(target.slice(1))}` : absolute(node.getAttribute("href"), this.base);
       if (href) next.href = href;
+      // Image-only links: use the accessible name a screen reader would announce.
+      if (href && !clean(node.text)) {
+        const label = clean(
+          node.getAttribute("aria-label") || node.getAttribute("title") || node.querySelector("img")?.getAttribute("alt") || "",
+        );
+        if (label) out.push({ ...next, t: label });
+        return out;
+      }
     }
     if (name === "b" || name === "strong") next.b = true;
     if (name === "i" || name === "em" || name === "cite" || name === "dfn") next.i = true;
@@ -184,6 +211,10 @@ class Reader {
       absolute(el.getAttribute("data-src"), this.base) ??
       absolute(el.getAttribute("srcset")?.split(/[\s,]+/)[0], this.base);
     if (!src || el.hasAttribute("usemap")) return; // image maps are navigation
+    const alt = clean(el.getAttribute("alt") ?? "");
+    // Alt text like "arrow_02" is a filename, not a description.
+    const described = /\s/.test(alt) || (alt.length > 0 && !/[-_.]|\d$/.test(alt));
+    if (!described && /arrow|spacer|bullet|divider|separator|\bicon/i.test(`${src} ${el.getAttribute("class") ?? ""}`)) return; // decoration
     const w = Number(el.getAttribute("width")), h = Number(el.getAttribute("height"));
     if ((w && w < 48) || (h && h < 48)) return; // icons, spacers, trackers
     this.blocks.push({ k: "img", src, alt: clean(el.getAttribute("alt") ?? ""), caption });
@@ -202,7 +233,13 @@ class Reader {
         run.push({ t: (child as unknown as { text: string }).text });
         continue;
       }
-      if (!isEl(child) || hidden(child)) continue;
+      if (!isEl(child)) continue;
+      if (isDialog(child)) {
+        flush();
+        this.dialog(child);
+        continue;
+      }
+      if (hidden(child)) continue;
       const name = tag(child);
       if (DROP.has(name)) continue;
       if (INLINE.has(name)) {
@@ -282,13 +319,40 @@ class Reader {
         const summaryEl = el.querySelector("summary");
         const summary = clean(summaryEl?.text ?? "");
         summaryEl?.remove();
-        const c = tidy(this.inlines(el));
-        if (summary) this.blocks.push({ k: "details", summary, c });
+        const blocks = this.read(el);
+        if (summary && blocks.length) this.blocks.push({ k: "details", summary, blocks });
+        else this.blocks.push(...blocks);
         return;
       }
       default:
         this.walk(el);
     }
+  }
+
+  /** Reads an element's content as its own block list. */
+  read(el: HTMLElement): Block[] {
+    const sub = new Reader(this.base);
+    sub.labels = this.labels;
+    sub.openers = this.openers;
+    sub.dialogs = this.dialogs;
+    sub.walk(el);
+    return sub.blocks;
+  }
+
+  dialog(el: HTMLElement) {
+    const labelled = el.getAttribute("aria-labelledby");
+    const titleEl =
+      (labelled ? el.querySelector(`#${labelled.split(/\s+/)[0]}`) : null) ??
+      el.querySelector('.modal-title, [class*="title"], h1, h2, h3, h4, h5');
+    // The button that opens it names it best; the dialog's own title is next.
+    const summary = (el.id && this.openers.get(el.id)) || clean(titleEl?.text ?? "");
+    if (titleEl && clean(titleEl.text).length <= 80) titleEl.remove();
+    // Walk the dialog's body, skipping its frame (header, close buttons, footer).
+    const body = el.querySelector('.modal-body, [class*="dialog-body"], [class*="popup-body"]') ?? el;
+    const blocks = this.read(body);
+    const words = blocks.reduce((n, b) => n + (b.k === "p" || b.k === "quote" ? wordCount(textOf(b.c)) : b.k === "list" ? b.items.length * 5 : 10), 0);
+    if (words < 3) return;
+    this.dialogs.push({ k: "details", summary: summary || "More", blocks, id: el.id ? dialogAnchor(el.id) : undefined });
   }
 
   list(el: HTMLElement, ordered: boolean, depth = 0, into?: { c: Inline[]; depth: number }[]) {
@@ -512,7 +576,37 @@ function group(blocks: Block[], cards: boolean): Section[] {
     if (!compact) continue;
     s.items = [...items.slice(0, starts[0]), { k: "cards", cards: groups }];
   }
-  return sections.filter((s) => s.heading || s.items.length);
+  // Runs of tiny sections (process steps, feature blurbs) become one row of cards
+  // under the section before them.
+  const merged: Section[] = [];
+  // A section's lead-in: the blocks before its first sub-heading.
+  const leadIn = (s: Section) => {
+    const end = s.items.findIndex((b) => b.k === "h");
+    return end === -1 ? s.items.length : end;
+  };
+  const tinyLead = (s: Section) => {
+    const n = leadIn(s);
+    const lead = s.items.slice(0, n) as Block[];
+    return !!s.heading && n > 0 && n <= 3 && lead.every((b) => b.k === "p" || b.k === "img") && wordsIn(lead, ["p"]) <= 40;
+  };
+  const tiny = (s: Section) => tinyLead(s) && leadIn(s) === s.items.length;
+  for (let i = 0; i < sections.length; ) {
+    let j = i;
+    while (j < sections.length && tiny(sections[j])) j++;
+    // The last step may carry more content after its lead-in; that stays a section.
+    const tail = j < sections.length && tinyLead(sections[j]) ? sections[j] : null;
+    const count = j - i + (tail ? 1 : 0);
+    if (count >= 3) {
+      const run = sections.slice(i, j).concat(tail ? [tail] : []);
+      const cards = run.map((s) => ({ title: s.heading!, blocks: s.items.slice(0, leadIn(s)) as Block[] }));
+      const host = merged.at(-1) ?? { items: [] };
+      if (!merged.length) merged.push(host);
+      host.items.push({ k: "cards", cards });
+      if (tail) merged.push({ items: tail.items.slice(leadIn(tail)) });
+      i = j + (tail ? 1 : 0);
+    } else merged.push(sections[i++]);
+  }
+  return merged.filter((s) => s.heading || s.items.length);
 }
 
 /* ----------------------------------------------------------------------------
@@ -535,6 +629,13 @@ export function readPage(html: string, url: URL): Page {
   const body = doc.querySelector("body") ?? doc;
   const reader = new Reader(base);
   body.querySelectorAll("label[for]").forEach((l) => reader.labels.set(l.getAttribute("for")!, clean(l.text)));
+  for (const opener of body.querySelectorAll("[data-target], [data-bs-target], a[href^='#']")) {
+    const target = opener.getAttribute("data-bs-target") ?? opener.getAttribute("data-target") ?? opener.getAttribute("href") ?? "";
+    const label = clean(opener.text);
+    if (target.startsWith("#") && label.length >= 2 && label.length <= 60 && !reader.openers.has(target.slice(1))) {
+      reader.openers.set(target.slice(1), label);
+    }
+  }
 
   // Site navigation: the first nav (or header) links, kept as the site's own menu.
   const navRoot = body.querySelector("nav") ?? body.querySelector("header");
@@ -579,6 +680,15 @@ export function readPage(html: string, url: URL): Page {
     blocks = blocks.filter((_, i) => !remove.includes(i));
   }
 
+  // A lone step number before a heading belongs to it ("1" + "Apply online").
+  blocks = blocks.flatMap((b, i) => {
+    const next = blocks[i + 1];
+    if (b.k === "p" && /^\d{1,2}\.?$/.test(textOf(b.c).trim()) && next?.k === "h") {
+      next.text = `${textOf(b.c).trim().replace(/\.$/, "")}. ${next.text}`;
+      return [];
+    }
+    return [b];
+  });
   blocks = collapseRows(collapseStats(blocks));
   const prose = wordsIn(blocks, ["p", "quote"]);
   const all = wordsIn(blocks, ["p", "quote", "list"]) + blocks.filter((b) => b.k === "rows").length * 50;
@@ -600,7 +710,8 @@ export function readPage(html: string, url: URL): Page {
     lead,
     nav,
     kind,
-    sections: group(blocks, kind === "page"),
+    // Dialog content follows everything visible, as it does for a visitor.
+    sections: [...group(blocks, kind === "page"), ...(reader.dialogs.length ? [{ items: reader.dialogs }] : [])],
     words: all,
   };
 }

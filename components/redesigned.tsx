@@ -129,6 +129,14 @@ function A({
   className?: string;
   children: React.ReactNode;
 }) {
+  // In-page jump to a dialog we turned into a collapsible section.
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
   let internal = false;
   try {
     const u = new URL(href);
@@ -268,8 +276,16 @@ function Flow({ items, ctx }: { items: Item[]; ctx: Ctx }) {
   return <>{out}</>;
 }
 
+/** A list whose items are each essentially one link: menus, actions, indexes. */
 function linkList(b: Extract<Block, { k: "list" }>) {
-  return b.items.length >= 4 && b.items.every((it) => it.c.length === 1 && it.c[0].href);
+  return (
+    b.items.length >= 4 &&
+    b.items.every((it) => {
+      const total = it.c.reduce((n, s) => n + s.t.trim().length, 0);
+      const linked = it.c.filter((s) => s.href).reduce((n, s) => n + s.t.trim().length, 0);
+      return new Set(it.c.filter((s) => s.href).map((s) => s.href)).size === 1 && linked / Math.max(total, 1) >= 0.7;
+    })
+  );
 }
 
 function BlockView({ item, ctx }: { item: Item; ctx: Ctx }) {
@@ -295,11 +311,11 @@ function BlockView({ item, ctx }: { item: Item; ctx: Ctx }) {
               {item.items.map((it, i) => (
                 <A
                   key={i}
-                  href={it.c[0].href!}
+                  href={it.c.find((s) => s.href)!.href!}
                   ctx={ctx}
                   className="group flex items-center justify-between gap-4 px-4 py-3 text-sm/6 text-gray-950 transition-colors hover:bg-gray-950/[0.02] sm:px-5"
                 >
-                  <span style={{ paddingLeft: `${it.depth * 1}rem` }}>{it.c[0].t}</span>
+                  <span style={{ paddingLeft: `${it.depth * 1}rem` }}>{it.c.map((s) => s.t).join("")}</span>
                   <Arrow className="shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-950" />
                 </A>
               ))}
@@ -466,9 +482,10 @@ function Disclosures({ items, ctx }: { items: Extract<Block, { k: "details" }>[]
               <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current transition-transform group-open:scale-y-0" />
             </span>
           </summary>
-          <p className={`pb-5 ${ctx.t.small}`}>
-            <Inlines c={d.c} ctx={ctx} />
-          </p>
+          {/* Fragment links to this id auto-open the <details> in Chromium. */}
+          <div id={d.id} className="scroll-mt-20 pb-6">
+            <Flow items={d.blocks} ctx={ctx} />
+          </div>
         </details>
       ))}
     </div>
