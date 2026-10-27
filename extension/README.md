@@ -1,9 +1,10 @@
 # New Internet Society — Redesign (browser extension)
 
 One click restyles the site you're on in the New Internet Society design:
-LT Superior Serif headings, Inter Display text, a near-monochrome palette,
-pill buttons, framed pop-ups and clean fields. Titles are never shown in all
-caps.
+LT Superior Serif headings at the design's sizes, Inter Display text in a
+softer body ink, hairline rails down the page's main column, groups of boxes
+gathered into tinted frames of white panels, hatched stages, pill buttons and
+fields, and framed pop-ups. Titles are never shown in all caps.
 
 The page itself keeps running. Forms submit, menus open, pop-ups pop, logins
 and payments work, because nothing is rebuilt; only how it looks changes.
@@ -54,6 +55,13 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
   animation, so they're redesigned in their open state.
 - New content (infinite scroll, single-page app navigation, pop-ups built on
   the fly) is redesigned as it appears.
+- After tagging, a layout pass reads where things sit: the width most of the
+  page's centred content shares gets hairline rails; sibling boxes (cards,
+  tiles, grid columns drawn as boxes) become white panels in a tinted frame,
+  with the gutter drawn inside panels that touch so nothing moves; a lone box
+  gets the frame drawn around it. It runs again on resize and page changes.
+- Stylesheets that arrive late (slow servers) trigger a fresh read of the
+  page, so boxes are never judged without the site's own styles.
 - Dark areas (headers, footers, dark panels) stay dark, in ink, so logos and
   icons drawn for them stay visible. Light and coloured areas become white.
 - Maps, photos, videos, illustrations, dark code panels and custom
@@ -80,8 +88,9 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
 
 ## Known limits
 
-- Layout is kept as the site built it; the redesign changes typography,
-  colour, surfaces and controls, not the arrangement of the page.
+- The arrangement of the page is kept as the site built it: nothing is moved
+  or reflowed. Headings grow only where they stay on one line, and frames are
+  drawn in space the page already leaves free.
 - Content inside cross-site iframes (embedded payment widgets, ads, some
   login boxes) is a different site; it's redesigned only if it's on too.
 - Browser-native dialogs (`alert`, `confirm`, file pickers) can't be styled.

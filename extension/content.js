@@ -419,6 +419,25 @@
     el.getAttribute("aria-modal") === "true" ||
     /(^|\s)(modal-content|modal-box|modal__content|popup-content|dialog-content|swal2-popup|ui-dialog)(\s|$)/i.test(el.getAttribute("class") || "");
 
+  // Headings are set at the design's sizes: never smaller than the page had
+  // them, at least the design's size for their level, and only where they have room.
+  const HEADING_MIN = { 1: 40, 2: 30, 3: 24 };
+  function growHeading(el, tag, fs, rect, parent, set) {
+    if (parent.bar || parent.media || parent.ink || parent.dialog || parent.box) return;
+    if (rect.width < 200 || el.textContent.trim().length > 120) return;
+    const level = HEADINGS.has(tag) ? Number(tag[1]) : Number(el.getAttribute("aria-level")) || 2;
+    let target = Math.min(Math.max(fs * 1.15, HEADING_MIN[level] ?? fs), fs * 1.7, 64);
+    // Never onto more lines than it had: a one-line heading grows only as far as its box allows.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const lines = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+    if (lines.size !== 1) return;
+    target = Math.round(Math.min(target, (fs * rect.width * 0.94) / range.getBoundingClientRect().width));
+    if (target - fs < 1) return;
+    set.grow = "";
+    el.style.setProperty("--nis-hfs", `${target}px`);
+  }
+
   /**
    * Decides an element's role. `parent` is the context inherited from above:
    * { media, ink, bar, dialog, box } flags.
@@ -469,10 +488,15 @@
     if (darkSurface) set.tone = "dark";
     const borderVisible =
       parseFloat(cs.borderTopWidth) > 0 && rgba(cs.borderTopColor)[3] > 0.1 && cs.borderTopStyle !== "none";
+    // Only borders the page actually shows are recoloured; invisible ones stay invisible.
+    if (["Top", "Right", "Bottom", "Left"].some((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== "none" && rgba(cs[`border${side}Color`])[3] > 0.1)) {
+      set.border = "";
+    }
     const strongBg = painted && (bgLum < 0.35 || (bgChroma > 0.25 && bgLum < 0.6));
     const cls = el.getAttribute("class") || "";
     const area = rect.width * rect.height;
     const fs = parseFloat(cs.fontSize) || 16;
+    const weight = parseFloat(cs.fontWeight) || 400;
     const text = hasDirectText(el);
 
     // Read before redesign.css resets it: capitals set by CSS, and Title Case /
@@ -499,6 +523,9 @@
       const lum = luminance(c);
       if (chroma(c) < 0.12 && lum > 0.12 && lum < 0.75) set.muted = "";
       if (fs < 12.5) set.small = "";
+      // Running text reads in the softer body ink; bold text keeps full ink.
+      if (weight >= 600) set.strong = "";
+      else if (fs <= 21) set.body = "";
     }
 
     // Form controls.
@@ -600,9 +627,18 @@
     // Headings, and big display text built from divs.
     if (HEADINGS.has(tag) || el.getAttribute("role") === "heading") {
       if (fs < 17) set.hsize = "small";
+      else growHeading(el, tag, fs, rect, parent, set);
       return { kind: "heading", ctx, set, walk: true };
     }
     if (text && fs >= 26 && el.textContent.trim().length < 160 && cs.display !== "inline") {
+      return { kind: "display", ctx, set, walk: true };
+    }
+    // Titles built from a bold div ("Pay visa processing fee"): short, on their own, nothing but text.
+    if (
+      text && fs >= 20 && weight >= 600 && !parent.bar && !parent.ink && cs.display !== "inline" &&
+      el.textContent.trim().length < 80 && [...kidsOf(el)].every((k) => !k.textContent.trim())
+    ) {
+      growHeading(el, "H2", fs, rect, parent, set);
       return { kind: "display", ctx, set, walk: true };
     }
 
@@ -627,8 +663,6 @@
       return { kind: isTopBar ? "bar" : "nav", ctx: { ...ctx, bar: true }, set, walk: true };
     }
 
-    if (tag === "A") return { kind: "link", ctx, set, walk: true };
-
     // Painted surfaces, by size.
     const bordered =
       borderVisible &&
@@ -637,6 +671,12 @@
       parseFloat(cs.borderRightWidth) > 0;
     const shadowed = cs.boxShadow && cs.boxShadow !== "none";
     const block = cs.display !== "inline" && cs.display !== "contents";
+
+    // Links drawn as boxes (tiles, teasers) are cards.
+    if (tag === "A") {
+      const box = (tinted || bordered || shadowed) && block && !parent.ink && !parent.bar && rect.width >= 120 && rect.height >= 64;
+      return { kind: box ? "card" : "link", ctx, set, walk: true };
+    }
 
     // Popovers: painted panels floating over the page (menus, flyouts, tooltips
     // with content). Drawn as white floating panels wherever they appear.
@@ -673,8 +713,14 @@
         el.style.setProperty("--nis-note", `rgb(${bg[0]} ${bg[1]} ${bg[2]})`);
         set.tone = "note";
       }
-      if (wide || rect.height >= vh() * 0.6) {
-        if (!darkSurface) set.tone = tinted && bgLum < 0.8 ? "alt" : "plain";
+      // A drawn, rounded box that stops short of the page edges is a panel however wide it is.
+      const boxed =
+        (bordered || shadowed) &&
+        rect.width < vw() - 24 &&
+        (parseFloat(cs.borderTopLeftRadius) >= 3 || (rect.width < vw() * 0.9 && rect.height < vh() * 1.5));
+      if ((wide || rect.height >= vh() * 0.6) && !boxed) {
+        // Strongly coloured areas tall enough to be a stage become the hatched stage; strips stay plain.
+        if (!darkSurface) set.tone = tinted && bgLum < 0.8 && rect.height >= 160 ? "alt" : "plain";
         return { kind: "section", ctx, set, walk: true };
       }
       if (rect.width >= 120 && rect.height >= 56 && kidsOf(el).length > 0) {
@@ -902,6 +948,163 @@
   }
 
   /* --------------------------------------------------------------------------
+   * Layout: the design's hairline rails, tinted frames holding white panels,
+   * and the stacked ring around a lone panel. Read from where things sit, so
+   * it runs after tagging and again whenever the page changes or resizes.
+   * ------------------------------------------------------------------------ */
+
+  const LAYOUT_MARKS = ["data-nis-frame", "data-nis-fpad", "data-nis-panel", "data-nis-ring", "data-nis-inset", "data-nis-ipad"];
+  const SKIP_CARD = /(^|\s)(bar|media|dialog|dark|ink)(\s|$)/;
+
+  const usableCard = (c) =>
+    !c.hasAttribute("data-nis-menu") &&
+    !SKIP_CARD.test(c.getAttribute("data-nis-in") || "") &&
+    !/^(dark|note)$/.test(c.getAttribute("data-nis-tone") || "");
+
+  const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+  /** Groups of sibling panels become a frame; a lone panel with room around it gets the stacked ring. */
+  function frames() {
+    for (const m of LAYOUT_MARKS) for (const el of document.querySelectorAll(`[${m}]`)) el.removeAttribute(m);
+    const cw = html.clientWidth || vw();
+    const cards = [...document.querySelectorAll('[data-nis="card"]')].filter(usableCard);
+    const chains = new Map();
+    const counts = new Map();
+    for (const card of cards) {
+      const chain = [];
+      for (let a = card.parentElement, i = 0; a && a !== document.body && i < 4; a = a.parentElement, i++) {
+        chain.push(a);
+        counts.set(a, (counts.get(a) || 0) + 1);
+        if (a.getAttribute("data-nis") === "card" || a.getAttribute("data-nis") === "modal") break;
+      }
+      chains.set(card, chain);
+    }
+    const groups = new Map();
+    for (const card of cards) {
+      const g = chains.get(card).find((a) => counts.get(a) >= 2);
+      if (g) {
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g).push(card);
+      } else ring(card, cw);
+    }
+    for (const [g, members] of groups) {
+      if (g.closest('[data-nis-in~="media"], [data-nis-in~="bar"], [data-nis-in~="dark"]')) continue;
+      const r = g.getBoundingClientRect();
+      const area = members.reduce((sum, c) => {
+        const b = c.getBoundingClientRect();
+        return sum + b.width * b.height;
+      }, 0);
+      // The panels must make up the group.
+      if (area < r.width * r.height * 0.35) {
+        for (const c of members) ring(c, cw);
+        continue;
+      }
+      // Across the whole page it's a band; inside it, a rounded tray.
+      const band = r.width > cw - 24;
+      g.setAttribute("data-nis-frame", band ? "band" : "");
+      const pcs = getComputedStyle(g);
+      if (!band && Math.min(parseFloat(pcs.paddingTop), parseFloat(pcs.paddingRight), parseFloat(pcs.paddingBottom), parseFloat(pcs.paddingLeft)) < 6) {
+        g.setAttribute("data-nis-fpad", "");
+      }
+      const rects = members.map((c) => c.getBoundingClientRect());
+      members.forEach((c, i) => {
+        c.setAttribute("data-nis-panel", "");
+        // Panels that touch a neighbour (grid columns drawn as boxes) get the
+        // tray's gutter drawn inside their own edge, which moves nothing.
+        const near = { left: rects[i].left - 5, right: rects[i].right + 5, top: rects[i].top - 5, bottom: rects[i].bottom + 5 };
+        if (rects.some((b, j) => j !== i && overlaps(near, b)) && insetFits(c, 4)) {
+          c.setAttribute("data-nis-inset", "");
+        }
+      });
+    }
+  }
+
+  /**
+   * A frame drawn inside a box's edge (a `width`px border) must not change its
+   * size: with border-box sizing it can't; otherwise it's taken out of the padding.
+   */
+  function insetFits(el, width) {
+    const cs = getComputedStyle(el);
+    el.style.removeProperty("--nis-ipad");
+    if (cs.boxSizing === "border-box") return true;
+    const sides = ["Top", "Right", "Bottom", "Left"].map((side) => parseFloat(cs[`padding${side}`]) - (width - parseFloat(cs[`border${side}Width`])));
+    if (sides.some((v) => v < 0)) return false;
+    el.style.setProperty("--nis-ipad", sides.map((v) => `${v}px`).join(" "));
+    el.setAttribute("data-nis-ipad", "");
+    return true;
+  }
+
+  /**
+   * The stacked ring is drawn outside the panel where nothing else is within 9px;
+   * where something is, the frame is drawn inside the panel's edge instead.
+   */
+  function ring(card, cw) {
+    const r = card.getBoundingClientRect();
+    if (r.width < 200 || r.height < 100 || r.width > cw - 40) return;
+    const out = { left: r.left - 9, right: r.right + 9, top: r.top - 9, bottom: r.bottom + 9 };
+    for (let a = card, i = 0; a && a !== document.body && i < 4; a = a.parentElement, i++) {
+      const p = a.parentElement;
+      if (!p) break;
+      for (const sib of kidsOf(p)) {
+        if (sib === a || IGNORE.has(tagOf(sib))) continue;
+        const b = sib.getBoundingClientRect();
+        if (b.width && b.height && overlaps(out, b)) {
+          if (insetFits(card, 6)) card.setAttribute("data-nis-ring", "inset");
+          return;
+        }
+      }
+    }
+    card.setAttribute("data-nis-ring", "");
+  }
+
+  /** The page's main column: the width most of its centred content shares. Its edges get hairline rails. */
+  function rails() {
+    const cw = html.clientWidth || vw();
+    const tally = new Map();
+    const queue = [[document.body, 0]];
+    for (let seen = 0; queue.length && seen < 4000; seen++) {
+      const [el, depth] = queue.shift();
+      for (const k of kidsOf(el)) {
+        const t = tagOf(k);
+        if (IGNORE.has(t) || MEDIA.has(t)) continue;
+        const r = k.getBoundingClientRect();
+        if (!r.width || !r.height) {
+          if (depth < 10 && getComputedStyle(k).display === "contents") queue.push([k, depth + 1]);
+          continue;
+        }
+        const w = Math.round(r.width / 4) * 4;
+        if (Math.abs(r.left - (cw - r.right)) <= 3 && w >= Math.min(cw * 0.6, 900) && w <= cw - 32 && r.height >= 40) {
+          tally.set(w, (tally.get(w) || 0) + r.height);
+        }
+        if (depth < 8 && r.width >= cw * 0.5) queue.push([k, depth + 1]);
+      }
+    }
+    let best = 0;
+    let weight = 0;
+    for (const [w, h] of tally) if (h > weight) [best, weight] = [w, h];
+    const on = weight >= Math.min(600, html.scrollHeight * 0.3);
+    html.classList.toggle("nis-rails", on);
+    const value = `${best}px`;
+    if (on && html.style.getPropertyValue("--nis-rail") !== value) html.style.setProperty("--nis-rail", value);
+  }
+
+  let layoutTimer = 0;
+  function layout() {
+    clearTimeout(layoutTimer);
+    layoutTimer = setTimeout(() => {
+      pause();
+      try {
+        frames();
+        rails();
+      } catch (err) {
+        console.debug("Redesign skipped the layout pass:", err);
+      } finally {
+        reconnect();
+      }
+    }, 120);
+  }
+
+  /* --------------------------------------------------------------------------
    * Running: initial pass, then follow the page as it changes.
    * ------------------------------------------------------------------------ */
 
@@ -975,6 +1178,7 @@
         }
       }
       if (casingReady) for (const t of texts) if (t.isConnected && t.parentElement) recaseText(t);
+      if (added.size || changed.size) layout();
     } finally {
       added.clear();
       changed.clear();
@@ -1001,7 +1205,18 @@
       else if (r.target.nodeType === 1) changed.add(r.target);
     }
   }
+  // Pages that set <html class> wholesale (Wikipedia and many frameworks) drop ours: put them back.
+  let bareClass = false;
+  function keepClasses() {
+    if (!html.classList.contains("nis-on")) {
+      html.classList.add("nis-on");
+      if (bareClass) html.classList.add("nis-bare");
+      if (initialDone) html.classList.add("nis-ready");
+      layout();
+    }
+  }
   const observer = new MutationObserver((records) => {
+    if (records.some((r) => r.target === html && r.attributeName === "class")) keepClasses();
     ingest(records);
     schedule();
   });
@@ -1026,10 +1241,48 @@
     return authored.length === 0 && styled < 5;
   }
 
+  /** Reads the whole page again in its own styles, for stylesheets that arrived after the first pass. */
+  function retag() {
+    pause();
+    try {
+      html.classList.remove("nis-on");
+      for (const el of document.querySelectorAll("[data-nis], [data-nis-pending]")) {
+        for (const a of [...el.attributes]) if (a.name.startsWith("data-nis")) el.removeAttribute(a.name);
+      }
+      tag(document.body, { ...ROOT_CTX });
+    } finally {
+      html.classList.add("nis-on");
+      reconnect();
+    }
+    layout();
+  }
+
   function start() {
     if (started || !document.body) return;
     started = true;
-    if (bare()) html.classList.add("nis-bare");
+    // Started before every stylesheet was in (a slow one): read the page again as each late one arrives.
+    let retagTimer = 0;
+    const later = () => {
+      clearTimeout(retagTimer);
+      retagTimer = setTimeout(function again() {
+        if (!initialDone) return (retagTimer = setTimeout(again, 50));
+        retag();
+      }, 100);
+    };
+    const watchStylesheets = () => {
+      for (const link of pendingStylesheets()) {
+        link.addEventListener("load", later, { once: true });
+        link.addEventListener("error", later, { once: true });
+      }
+    };
+    watchStylesheets();
+    // Started on the 1.5s cap before parsing ended: stylesheets further down count too.
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", watchStylesheets, { once: true });
+    if (bare()) {
+      bareClass = true;
+      html.classList.add("nis-bare");
+    }
+    if (!html.classList.contains("nis-on")) html.classList.add("nis-on");
     const t0 = performance.now();
     // Watch for changes from the start; they're handled once the first pass ends.
     reconnect();
@@ -1052,6 +1305,9 @@
       html.classList.add("nis-ready");
       initialDone = true;
       schedule();
+      layout();
+      document.fonts?.ready.then(layout);
+      window.addEventListener("resize", layout, { passive: true });
       afterSettled(startCasing);
     };
     slice();
@@ -1088,11 +1344,23 @@
     }
   }
 
-  /** Runs once the page has loaded and gone quiet (after any hydration). */
+  /**
+   * Runs once the page has loaded and gone quiet (after any hydration), or
+   * after 4s at most: some pages never finish loading (a stalled image or font).
+   */
   function afterSettled(fn) {
-    const idle = () => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
+    let ran = false;
+    const once = () => {
+      if (ran) return;
+      ran = true;
+      fn();
+    };
+    const idle = () => (window.requestIdleCallback ? requestIdleCallback(once, { timeout: 1500 }) : setTimeout(once, 300));
     if (document.readyState === "complete") setTimeout(idle, 300);
-    else window.addEventListener("load", () => setTimeout(idle, 300), { once: true });
+    else {
+      window.addEventListener("load", () => setTimeout(idle, 300), { once: true });
+      setTimeout(idle, 4000);
+    }
   }
 
   function startCasing() {
@@ -1114,12 +1382,9 @@
   }
 
   // Start once the page's stylesheets have loaded, so elements are read in their real styles.
-  function stylesheetsReady() {
-    for (const link of document.querySelectorAll('link[rel~="stylesheet"]')) {
-      if (!link.sheet && !link.disabled && link.media !== "print") return false;
-    }
-    return true;
-  }
+  const pendingStylesheets = () =>
+    [...document.querySelectorAll('link[rel~="stylesheet"]')].filter((link) => !link.sheet && !link.disabled && link.media !== "print");
+  const stylesheetsReady = () => pendingStylesheets().length === 0;
   function whenReady() {
     const began = Date.now();
     const poll = () => {

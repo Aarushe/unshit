@@ -10,6 +10,12 @@
 html.nis-on:not(#nis-a):not(#nis-b) {
   --nis-ink: #030712;
   --nis-ink-2: rgb(3 7 18 / 0.72);
+  /* Running text, as in the design: ink at 62%. */
+  --nis-body: rgb(3 7 18 / 0.62);
+  --nis-rail-line: rgb(3 7 18 / 0.06);
+  /* The design's frame tint: ink at 2.5% on white, solid so it can sit under panels. */
+  --nis-frame: #f9f9fa;
+  --nis-hatch: repeating-linear-gradient(315deg, rgb(3 7 18 / 0.06) 0, rgb(3 7 18 / 0.06) 1px, transparent 0, transparent 50%);
   --nis-muted: #6b7280;
   --nis-faint: #9ca3af;
   --nis-line: rgb(3 7 18 / 0.08);
@@ -36,7 +42,7 @@ html.nis-on:not(#nis-a):not(#nis-b) {
  * ------------------------------------------------------------------------- */
 
 html.nis-on:not(#nis-a):not(#nis-b) body {
-  background: var(--nis-paper) !important;
+  background: transparent !important;
   color: var(--nis-ink) !important;
   font-family: var(--nis-sans) !important;
   letter-spacing: 0.1px;
@@ -93,6 +99,10 @@ html.nis-on:not(#nis-a):not(#nis-b) :is(h1, [data-nis="display"]) {
   letter-spacing: -0.035em !important;
   line-height: 1.1 !important;
 }
+/* Headings at the design's sizes (content.js works out each one's size). */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-grow] {
+  font-size: var(--nis-hfs) !important;
+}
 /* Small headings read better in the text face. */
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis="heading"][data-nis-hsize="small"] {
   font-family: var(--nis-sans) !important;
@@ -136,9 +146,20 @@ html.nis-on:not(#nis-a):not(#nis-b) ::selection {
  * ------------------------------------------------------------------------- */
 
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis]:not([data-nis="media"], [data-nis="media-bg"], [data-nis-in~="media"], [data-nis-in~="ink"]) {
-  color: var(--nis-ink) !important;
-  border-color: var(--nis-line) !important;
+  color: var(--nis-fg, var(--nis-ink)) !important;
   text-shadow: none !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-border]:not([data-nis="media"], [data-nis="media-bg"], [data-nis-in~="media"], [data-nis-in~="ink"]) {
+  border-color: var(--nis-line) !important;
+}
+/* Running text is softer than headings, labels and bold text; panels start over in full ink. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-body] {
+  --nis-fg: var(--nis-body);
+}
+html.nis-on:not(#nis-a):not(#nis-b) :is([data-nis][data-nis-strong], [data-nis]:is(b, strong, label, th, h1, h2, h3, h4, h5, h6, summary, legend),
+  [data-nis]:is([data-nis="heading"], [data-nis="display"], [data-nis="btn"], [data-nis="card"], [data-nis="section"],
+  [data-nis="modal"], [data-nis="bar"], [data-nis="field"], [data-nis="fieldbox"], [data-nis="chip"], [data-nis="table"])) {
+  --nis-fg: var(--nis-ink);
 }
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-muted]:not([data-nis-in~="media"], [data-nis-in~="ink"], [data-nis="btn"]) {
   color: var(--nis-muted) !important;
@@ -152,13 +173,17 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis]:is([data-nis="plain"], [data-nis=
   box-shadow: none !important;
 }
 
-/* Wide painted areas: white, separated by hairlines. */
+/* Wide painted areas open onto the page (so its rails run through them),
+ * separated by hairlines. Strongly coloured ones become the design's hatched stage. */
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis="section"]:not([data-nis-in~="media"]) {
-  background: var(--nis-paper) !important;
-  box-shadow: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: inset 0 1px 0 var(--nis-line) !important;
 }
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis="section"][data-nis-tone="alt"]:not([data-nis-in~="media"]) {
-  background: var(--nis-paper-2) !important;
+  background-color: var(--nis-paper) !important;
+  background-image: var(--nis-hatch) !important;
+  background-size: 10px 10px !important;
   box-shadow: inset 0 1px 0 var(--nis-line), inset 0 -1px 0 var(--nis-line) !important;
 }
 
@@ -184,7 +209,7 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis-in~="bar"] a[data-nis="link"]:hove
 }
 
 html.nis-on:not(#nis-a):not(#nis-b) [data-nis="footer"]:not([data-nis-in~="media"]) {
-  background: var(--nis-paper-2) !important;
+  background: transparent !important;
   background-image: none !important;
   box-shadow: inset 0 1px 0 var(--nis-line) !important;
   color: var(--nis-muted) !important;
@@ -208,6 +233,51 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"]:not([data-nis-in~="media"]
   border-color: var(--nis-line) !important;
   border-radius: max(12px, var(--nis-r, 0px)) !important;
   box-shadow: 0 0 0 1px var(--nis-line), 0 1px 2px rgb(3 7 18 / 0.04) !important;
+}
+
+/* The design's frame: a tinted, ringed tray holding white panels. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-frame][data-nis-frame]:not([data-nis-in~="media"], [data-nis-tone="dark"]) {
+  background-color: var(--nis-frame) !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  border-radius: 18px !important;
+  box-shadow: inset 0 0 0 1px var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-frame="band"][data-nis-frame]:not([data-nis-in~="media"], [data-nis-tone="dark"]) {
+  border-radius: 0 !important;
+  box-shadow: inset 0 1px 0 var(--nis-line), inset 0 -1px 0 var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-frame][data-nis-fpad] {
+  padding: 6px !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-panel]:not([data-nis-frame]) {
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 1px var(--nis-line), 0 1px 2px rgb(3 7 18 / 0.05) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-panel][data-nis-inset]:not([data-nis-frame]) {
+  border: 4px solid var(--nis-frame) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 0 0 1px var(--nis-line), inset 0 1px 2px rgb(3 7 18 / 0.03) !important;
+}
+/* A lone panel gets the frame drawn around it: hairline, tint, hairline. */
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-ring]:not([data-nis-frame]) {
+  border-color: transparent !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 0 0 1px var(--nis-line),
+    0 0 0 7px var(--nis-frame),
+    0 0 0 8px var(--nis-line),
+    0 1px 2px rgb(3 7 18 / 0.05) !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-ring="inset"]:not([data-nis-frame]) {
+  border: 6px solid var(--nis-frame) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 0 0 1px var(--nis-line), inset 0 0 0 1px var(--nis-line) !important;
+}
+
+html.nis-on:not(#nis-a):not(#nis-b) [data-nis="card"][data-nis-ipad]:is([data-nis-ring="inset"], [data-nis-inset]):not([data-nis-frame]) {
+  padding: var(--nis-ipad) !important;
 }
 
 /* Callouts keep a pale echo of their original hue and a dark rule. */
@@ -325,19 +395,25 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis="field"] {
   outline: none !important;
   transition: border-color 0.15s, box-shadow 0.15s !important;
 }
+/* Single-line fields are pills, as in the design. */
+html.nis-on:not(#nis-a):not(#nis-b) :is(input, select:not([multiple], [size]:not([size="1"])))[data-nis="field"] {
+  border-color: rgb(3 7 18 / 0.14) !important;
+  border-radius: 9999px !important;
+  padding-inline: max(14px, var(--nis-pad, 0px));
+}
 html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5 6.5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
-  background-position: right 8px center !important;
+  background-position: right 12px center !important;
   background-size: 16px !important;
-  padding-right: 30px !important;
+  padding-right: 34px !important;
   -webkit-appearance: none !important;
   appearance: none !important;
 }
 html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"]:dir(rtl) {
-  background-position: left 8px center !important;
-  padding-right: 10px !important;
-  padding-left: 30px !important;
+  background-position: left 12px center !important;
+  padding-right: 14px !important;
+  padding-left: 34px !important;
 }
 html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"][multiple],
 html.nis-on:not(#nis-a):not(#nis-b) select[data-nis="field"][size]:not([size="1"]) {
@@ -495,12 +571,15 @@ html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] {
   border-collapse: collapse !important;
   background: var(--nis-paper) !important;
 }
-html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] :is(th, td) {
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] :is(th, td)[data-nis-border] {
   border-color: var(--nis-line) !important;
+}
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] :is(th, td) {
   background-color: transparent !important;
   background-image: none !important;
 }
-html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] th[data-nis] {
+/* Column headers are the design's mono labels; row headers and titles spanning the table stay in the text face. */
+html.nis-on:not(#nis-a):not(#nis-b) table[data-nis] :is(thead th, th[scope="col"])[data-nis] {
   color: var(--nis-muted) !important;
   font-weight: 500 !important;
   font-family: var(--nis-mono) !important;
@@ -534,6 +613,16 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis="rule"] {
   border-top: 1px solid var(--nis-line) !important;
   background: none !important;
   height: 0 !important;
+}
+
+/* The design's rails: hairlines down both edges of the page's main column. */
+html.nis-on:not(#nis-a):not(#nis-b).nis-rails {
+  background-color: var(--nis-paper) !important;
+  background-image: linear-gradient(var(--nis-rail-line), var(--nis-rail-line)),
+    linear-gradient(var(--nis-rail-line), var(--nis-rail-line)) !important;
+  background-size: 1px 100% !important;
+  background-repeat: repeat-y !important;
+  background-position: calc(50% - var(--nis-rail) / 2) 0, calc(50% + var(--nis-rail) / 2) 0 !important;
 }
 
 /* Scrollbars */
