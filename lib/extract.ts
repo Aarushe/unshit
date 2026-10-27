@@ -1,250 +1,606 @@
 import "server-only";
-import { parse, type HTMLElement } from "node-html-parser";
-import type { SiteContent } from "./schema";
+import { parse, type HTMLElement, type Node } from "node-html-parser";
 
-// Turns raw HTML into (a) a compact outline Claude can restructure and
-// (b) a best-effort SiteContent built from heuristics alone.
+// Reads a web page into an ordered list of content blocks — the page's own
+// words, links, images, tables and forms, nothing added — so it can be
+// re-rendered in our layout.
 
-export type PageDigest = {
+export type Inline = { t: string; href?: string; b?: true; i?: true; code?: true };
+
+export type Field = {
+  kind: "input" | "textarea" | "select" | "choice";
+  type: string;
+  name: string;
+  label: string;
+  required: boolean;
+  placeholder: string;
+  value: string;
+  multiple: boolean;
+  options: { label: string; value: string }[];
+};
+
+export type Block =
+  | { k: "h"; level: number; text: string }
+  | { k: "p"; c: Inline[] }
+  | { k: "list"; ordered: boolean; items: { c: Inline[]; depth: number }[] }
+  | { k: "quote"; c: Inline[] }
+  | { k: "code"; text: string }
+  | { k: "table"; head: string[]; rows: Inline[][][] }
+  | { k: "img"; src: string; alt: string; caption: string }
+  | { k: "form"; action: string; method: string; fields: Field[]; submit: string }
+  | { k: "details"; summary: string; c: Inline[] }
+  | { k: "hr" }
+  /** Figure + label pairs that the page lays out as stats. */
+  | { k: "stats"; items: { value: string; label: Inline[] }[] }
+  /** Runs of short linked lines (feeds, indexes): a link line plus its meta lines. */
+  | { k: "rows"; items: { main: Inline[]; meta: Inline[][] }[] };
+
+export type Card = { title: string; blocks: Block[] };
+export type Item = Block | { k: "cards"; cards: Card[] };
+export type Section = { heading?: string; items: Item[] };
+
+export type Page = {
   url: string;
   host: string;
-  name: string;
+  siteName: string;
   title: string;
-  description: string;
-  h1: string;
-  blocks: { tag: string; text: string }[];
-  ctas: string[];
-  quotes: { text: string; cite: string }[];
-  faqs: { q: string; a: string }[];
-  dated: { date: string; title: string }[];
+  lead: Inline[] | null;
+  nav: { label: string; href: string }[];
+  kind: "article" | "page" | "feed";
+  sections: Section[];
+  words: number;
 };
 
-const clean = (s: string) => s.replace(/\s+/g, " ").trim();
-const words = (s: string, n: number) => {
-  const w = s.split(" ");
-  return w.length <= n ? s : w.slice(0, n).join(" ") + "…";
-};
-const firstSentence = (s: string) => clean(s).match(/^.+?[.!?](\s|$)/)?.[0].trim() ?? s;
-const noPeriod = (s: string) => s.replace(/[.!]+$/, "");
+/* ----------------------------------------------------------------------------
+ * Helpers
+ * ------------------------------------------------------------------------- */
 
-export function digest(html: string, url: URL): PageDigest {
-  const root = parse(html, { comment: false });
-  const meta = (sel: string) => clean(root.querySelector(sel)?.getAttribute("content") ?? "");
+const ELEMENT = 1;
+const TEXT = 3;
+const isEl = (n: Node): n is HTMLElement => n.nodeType === ELEMENT;
+const tag = (el: HTMLElement) => (el.rawTagName ?? "").toLowerCase();
+const squash = (s: string) => s.replace(/\s+/g, " ");
+const clean = (s: string) => squash(s).trim();
 
-  root
-    .querySelectorAll("script, style, noscript, svg, template, iframe, [aria-hidden=true]")
-    .forEach((el) => el.remove());
+const INLINE = new Set([
+  "a", "span", "b", "strong", "i", "em", "u", "s", "small", "big", "font", "code", "kbd",
+  "samp", "var", "sup", "sub", "abbr", "time", "mark", "label", "cite", "q", "br", "dfn",
+  "del", "ins", "bdi", "bdo", "wbr", "data", "tt",
+]);
+const DROP = new Set([
+  "script", "style", "noscript", "svg", "template", "iframe", "object", "embed", "canvas",
+  "video", "audio", "map", "dialog", "button", "input", "select", "textarea", "head", "link", "meta",
+]);
+const BOILERPLATE =
+  /cookie|consent|gdpr|skip-?link|skip-?to|newsletter-?popup|modal|banner-?ad|advert|mw-editsection|noprint|dropdown|vector-menu|page-?tools|toolbar/i;
 
-  const title = clean(root.querySelector("title")?.text ?? "");
-  const host = url.hostname.replace(/^www\./, "");
-  const name =
-    meta('meta[property="og:site_name"]') ||
-    title.split(/\s[|–—·:-]\s/).map(clean).sort((a, b) => a.length - b.length)[0] ||
-    host;
-  const description =
-    meta('meta[name="description"]') || meta('meta[property="og:description"]');
-  const body = root.querySelector("main") ?? root.querySelector("body") ?? root;
-  // Pages with several h1s use them as section labels; the title is safer then.
-  const h1s = body.querySelectorAll("h1").map((h) => clean(h.text)).filter(Boolean);
-  const h1 = h1s.length === 1 ? h1s[0] : meta('meta[property="og:title"]') || title;
-
-  // Document-order outline of meaningful text, skipping site chrome.
-  const blocks: PageDigest["blocks"] = [];
-  const seen = new Set<string>();
-  const inChrome = (el: HTMLElement) => {
-    for (let p: HTMLElement | null = el; p; p = p.parentNode as HTMLElement | null) {
-      const tag = p.tagName?.toLowerCase();
-      if (tag === "nav" || tag === "footer" || tag === "header" || tag === "form") return true;
-      if (/cookie|consent|newsletter|modal/i.test(p.getAttribute?.("class") ?? "")) return true;
-    }
-    return false;
-  };
-  for (const el of body.querySelectorAll("h1, h2, h3, h4, p, li, blockquote, dt, dd, figcaption")) {
-    if (inChrome(el)) continue;
-    const tag = el.tagName.toLowerCase();
-    // Skip list items that only wrap links (menus, link farms).
-    if (tag === "li" && el.querySelectorAll("a").length > 0 && clean(el.text).length < 30) continue;
-    const text = clean(el.text);
-    if (text.length < (tag.startsWith("h") ? 2 : 25) || text.length > 1200 || seen.has(text)) continue;
-    seen.add(text);
-    blocks.push({ tag, text });
-    if (blocks.length >= 220) break;
-  }
-
-  const ctas = [
-    ...new Set(
-      body
-        .querySelectorAll("a, button")
-        .filter((el) => /btn|button|cta/i.test(el.getAttribute("class") ?? "") || el.getAttribute("role") === "button")
-        .map((el) => clean(el.text))
-        .filter((t) => t.length >= 3 && t.length <= 28),
-    ),
-  ].slice(0, 6);
-
-  const quotes = body
-    .querySelectorAll("blockquote")
-    .map((q) => ({
-      text: clean(q.querySelector("p")?.text ?? q.text),
-      cite: clean(q.querySelector("cite, footer")?.text ?? ""),
-    }))
-    .filter((q) => q.text.length > 30)
-    .slice(0, 3);
-
-  const faqs: PageDigest["faqs"] = body
-    .querySelectorAll("details")
-    .map((d) => {
-      const q = clean(d.querySelector("summary")?.text ?? "");
-      return { q, a: clean(d.text.replace(q, "")) };
-    })
-    .filter((f) => f.q && f.a.length > 10);
-  blocks.forEach((b, i) => {
-    const next = blocks[i + 1];
-    if (/^h[2-4]$/.test(b.tag) && b.text.endsWith("?") && next?.tag === "p") {
-      faqs.push({ q: b.text, a: next.text });
-    }
-  });
-
-  const dated = body
-    .querySelectorAll("time")
-    .map((t) => {
-      const box = (t.closest("article") ?? t.closest("li") ?? t.parentNode) as HTMLElement | null;
-      const heading = clean(box?.querySelector("h2, h3, h4, a")?.text ?? "");
-      return { date: clean(t.text) || (t.getAttribute("datetime") ?? "").slice(0, 10), title: heading };
-    })
-    .filter((d) => d.date && d.title && d.title.length < 120)
-    .filter((d, i, all) => all.findIndex((x) => x.title === d.title) === i)
-    .slice(0, 6);
-
-  return { url: url.toString(), host, name, title, description, h1, blocks, ctas, quotes, faqs: faqs.slice(0, 4), dated };
+function hidden(el: HTMLElement): boolean {
+  if (el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true") return true;
+  const style = (el.getAttribute("style") ?? "").replace(/\s/g, "").toLowerCase();
+  if (style.includes("display:none") || style.includes("visibility:hidden")) return true;
+  const cls = `${el.getAttribute("class") ?? ""} ${el.id ?? ""}`;
+  return /\b(sr-only|visually-hidden|screen-reader-text)\b/.test(cls) || BOILERPLATE.test(cls);
 }
 
-/** Plain-text rendering of the digest for the model. */
-export function outline(d: PageDigest): string {
-  const lines = [
-    `URL: ${d.url}`,
-    `Title: ${d.title}`,
-    `Site name: ${d.name}`,
-    d.description && `Meta description: ${d.description}`,
-    d.ctas.length && `Buttons: ${d.ctas.join(" | ")}`,
-    "",
-    ...d.blocks.map((b) => `[${b.tag}] ${b.text}`),
-    d.quotes.length && "\nQuotes:",
-    ...d.quotes.map((q) => `> ${q.text} — ${q.cite}`),
-    d.dated.length && "\nDated items:",
-    ...d.dated.map((x) => `- ${x.date}: ${x.title}`),
-  ];
-  return lines.filter((l) => l !== 0 && l !== "" && l !== undefined).join("\n").slice(0, 60_000);
+function absolute(href: string | undefined, base: URL): string | undefined {
+  if (!href) return undefined;
+  try {
+    const u = new URL(href.trim(), base);
+    return ["http:", "https:", "mailto:"].includes(u.protocol) ? u.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const textOf = (c: Inline[]) => c.map((s) => s.t).join("");
+const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
+
+/** Merge adjacent same-format segments and normalise whitespace. */
+function tidy(c: Inline[]): Inline[] {
+  const out: Inline[] = [];
+  for (const seg of c) {
+    const t = seg.t === "\n" ? "\n" : squash(seg.t);
+    if (!t) continue;
+    const prev = out.at(-1);
+    if (prev && prev.t !== "\n" && t !== "\n" && prev.href === seg.href && prev.b === seg.b && prev.i === seg.i && prev.code === seg.code) {
+      prev.t += t;
+    } else out.push({ ...seg, t });
+  }
+  // Trim edges and collapse spaces across segment boundaries.
+  while (out.length && (out[0].t === "\n" || !out[0].t.trim())) out.shift();
+  while (out.length && (out.at(-1)!.t === "\n" || !out.at(-1)!.t.trim())) out.pop();
+  if (out[0]) out[0].t = out[0].t.trimStart();
+  if (out.at(-1)) out.at(-1)!.t = out.at(-1)!.t.trimEnd();
+  for (let i = 1; i < out.length; i++) {
+    const prev = out[i - 1], cur = out[i];
+    if (prev.t.endsWith(" ") && cur.t.startsWith(" ")) cur.t = cur.t.slice(1);
+    // Two different links touching in markup are separated visually on the original.
+    else if (prev.href && cur.href && prev.href !== cur.href && !/\s$/.test(prev.t) && !/^\s/.test(cur.t)) {
+      cur.t = ` ${cur.t}`;
+    }
+  }
+  return out.filter((s) => s.t);
 }
 
 /* ----------------------------------------------------------------------------
- * Heuristic mapping — used when no API key is configured.
+ * Walker
  * ------------------------------------------------------------------------- */
 
-type Section = { heading: string; body: string; level: number };
+const MAX_BLOCKS = 900;
 
-function sections(d: PageDigest): Section[] {
-  const out: Section[] = [];
-  d.blocks.forEach((b, i) => {
-    if (!/^h[2-4]$/.test(b.tag) || b.text.endsWith("?")) return;
-    const following: string[] = [];
-    for (let j = i + 1; j < d.blocks.length && !/^h[1-4]$/.test(d.blocks[j].tag); j++) {
-      following.push(d.blocks[j].text);
-      if (following.join(" ").length > 220) break;
+class Reader {
+  blocks: Block[] = [];
+  labels = new Map<string, string>();
+  constructor(private base: URL) {}
+
+  full() {
+    return this.blocks.length >= MAX_BLOCKS;
+  }
+
+  inlines(node: Node, fmt: Omit<Inline, "t"> = {}, out: Inline[] = []): Inline[] {
+    if (node.nodeType === TEXT) {
+      out.push({ ...fmt, t: (node as unknown as { text: string }).text });
+      return out;
     }
-    const body = following.join(" ");
-    if (b.text.length <= 70 && body.length >= 20) {
-      out.push({ heading: b.text, body: words(body, 28), level: Number(b.tag[1]) });
+    if (!isEl(node) || hidden(node)) return out;
+    const name = tag(node);
+    if (DROP.has(name) || name === "img") return out;
+    if (name === "br") {
+      out.push({ t: "\n" });
+      return out;
     }
-  });
+    const next = { ...fmt };
+    if (name === "a") {
+      const href = absolute(node.getAttribute("href"), this.base);
+      if (href) next.href = href;
+    }
+    if (name === "b" || name === "strong") next.b = true;
+    if (name === "i" || name === "em" || name === "cite" || name === "dfn") next.i = true;
+    if (name === "code" || name === "kbd" || name === "samp" || name === "tt") next.code = true;
+    if (name === "sup" && /^\[?\d+\]?$/.test(clean(node.text))) return out; // footnote markers
+    for (const child of node.childNodes) this.inlines(child, next, out);
+    return out;
+  }
+
+  /** Splits an inline run on blank lines (`<br><br>`) into paragraphs. */
+  emitRun(run: Inline[]) {
+    const parts: Inline[][] = [[]];
+    for (let i = 0; i < run.length; i++) {
+      const seg = run[i];
+      if (seg.t === "\n" && run[i + 1]?.t === "\n") {
+        parts.push([]);
+        while (run[i + 1]?.t === "\n") i++;
+      } else parts.at(-1)!.push(seg);
+    }
+    for (const part of parts) {
+      const c = tidy(part);
+      if (textOf(c).trim().length >= 1) this.blocks.push({ k: "p", c });
+    }
+  }
+
+  image(el: HTMLElement, caption = "") {
+    const src =
+      absolute(el.getAttribute("src"), this.base) ??
+      absolute(el.getAttribute("data-src"), this.base) ??
+      absolute(el.getAttribute("srcset")?.split(/[\s,]+/)[0], this.base);
+    if (!src || el.hasAttribute("usemap")) return; // image maps are navigation
+    const w = Number(el.getAttribute("width")), h = Number(el.getAttribute("height"));
+    if ((w && w < 48) || (h && h < 48)) return; // icons, spacers, trackers
+    this.blocks.push({ k: "img", src, alt: clean(el.getAttribute("alt") ?? ""), caption });
+  }
+
+  walk(el: HTMLElement) {
+    let run: Inline[] = [];
+    const flush = () => {
+      if (run.length) this.emitRun(run);
+      run = [];
+    };
+
+    for (const child of el.childNodes) {
+      if (this.full()) break;
+      if (child.nodeType === TEXT) {
+        run.push({ t: (child as unknown as { text: string }).text });
+        continue;
+      }
+      if (!isEl(child) || hidden(child)) continue;
+      const name = tag(child);
+      if (DROP.has(name)) continue;
+      if (INLINE.has(name)) {
+        // Inline wrappers that hide whole blocks (e.g. <span><p>…</p></span>) are walked.
+        if (child.querySelector("p, div, ul, ol, table, h1, h2, h3, h4, form, img, blockquote, pre")) {
+          flush();
+          this.walk(child);
+        } else this.inlines(child, {}, run);
+        continue;
+      }
+      flush();
+      this.block(child, name);
+    }
+    flush();
+  }
+
+  block(el: HTMLElement, name: string) {
+    if (/^h[1-6]$/.test(name)) {
+      const text = clean(el.text);
+      if (text) this.blocks.push({ k: "h", level: Number(name[1]), text });
+      return;
+    }
+    switch (name) {
+      case "p": {
+        if (el.querySelector("p, div, ul, ol, table")) return this.walk(el);
+        this.emitRun(this.inlines(el));
+        el.querySelectorAll("img").forEach((img) => this.image(img));
+        return;
+      }
+      case "img":
+        return this.image(el);
+      case "figure": {
+        const caption = clean(el.querySelector("figcaption")?.text ?? "");
+        const imgs = el.querySelectorAll("img");
+        if (imgs.length) return imgs.forEach((img, i) => this.image(img, i === 0 ? caption : ""));
+        return this.walk(el);
+      }
+      case "picture": {
+        const img = el.querySelector("img");
+        if (img) this.image(img);
+        return;
+      }
+      case "ul":
+      case "ol":
+        return this.list(el, name === "ol");
+      case "dl": {
+        const items = el.childNodes.filter(isEl).map((d) => ({
+          c: tidy(tag(d) === "dt" ? [{ t: clean(d.text), b: true as const }] : this.inlines(d)),
+          depth: tag(d) === "dd" ? 1 : 0,
+        }));
+        if (items.length) this.blocks.push({ k: "list", ordered: false, items });
+        return;
+      }
+      case "blockquote": {
+        if (el.querySelector("p, div")) {
+          const c = tidy(el.querySelectorAll("p").flatMap((p) => [...this.inlines(p), { t: " " }]));
+          if (c.length) this.blocks.push({ k: "quote", c });
+          return;
+        }
+        const c = tidy(this.inlines(el));
+        if (c.length) this.blocks.push({ k: "quote", c });
+        return;
+      }
+      case "pre": {
+        const text = el.text.replace(/\n+$/, "");
+        if (text.trim()) this.blocks.push({ k: "code", text });
+        return;
+      }
+      case "hr":
+        this.blocks.push({ k: "hr" });
+        return;
+      case "table":
+        return this.table(el);
+      case "form":
+        return this.form(el);
+      case "details": {
+        const summaryEl = el.querySelector("summary");
+        const summary = clean(summaryEl?.text ?? "");
+        summaryEl?.remove();
+        const c = tidy(this.inlines(el));
+        if (summary) this.blocks.push({ k: "details", summary, c });
+        return;
+      }
+      default:
+        this.walk(el);
+    }
+  }
+
+  list(el: HTMLElement, ordered: boolean, depth = 0, into?: { c: Inline[]; depth: number }[]) {
+    const items = into ?? [];
+    for (const li of el.childNodes.filter(isEl)) {
+      if (tag(li) !== "li" || hidden(li)) continue;
+      if (li.querySelector("a[hreflang], a[lang]")) continue; // language switchers
+      const own: Inline[] = [];
+      const nested: HTMLElement[] = [];
+      for (const child of li.childNodes) {
+        if (isEl(child) && (tag(child) === "ul" || tag(child) === "ol")) nested.push(child);
+        else this.inlines(child, {}, own);
+      }
+      const c = tidy(own.map((s) => (s.t === "\n" ? { ...s, t: " " } : s)));
+      if (c.length) items.push({ c, depth });
+      nested.forEach((n) => this.list(n, tag(n) === "ol", depth + 1, items));
+      if (items.length > 150) break;
+    }
+    if (!into && items.length) this.blocks.push({ k: "list", ordered, items });
+  }
+
+  table(el: HTMLElement) {
+    const rows = el.querySelectorAll("tr").filter((tr) => tr.closest("table") === el);
+    const nested = el.querySelector("table");
+    const cells = (tr: HTMLElement) => tr.childNodes.filter(isEl).filter((c) => ["td", "th"].includes(tag(c)));
+    const isData =
+      !nested &&
+      !el.querySelector("form") &&
+      rows.length >= 2 &&
+      // Only tables that declare headers are data; header-less ones are usually layout.
+      (el.querySelector("th") !== null || el.querySelector("thead") !== null) &&
+      el.getAttribute("role") !== "presentation";
+
+    if (!isData) {
+      // Layout table: read cell contents in order.
+      for (const tr of rows) for (const cell of cells(tr)) this.walk(cell);
+      if (rows.length === 0) this.walk(el);
+      return;
+    }
+
+    const first = rows[0];
+    const headerRow = cells(first).every((c) => tag(c) === "th");
+    const head = headerRow ? cells(first).map((c) => clean(c.text)) : [];
+    const body = (headerRow ? rows.slice(1) : rows).slice(0, 80);
+    this.blocks.push({
+      k: "table",
+      head,
+      rows: body.map((tr) => cells(tr).map((c) => tidy(this.inlines(c).map((s) => (s.t === "\n" ? { ...s, t: " " } : s))))),
+    });
+  }
+
+  form(el: HTMLElement) {
+    const action = absolute(el.getAttribute("action") || this.base.toString(), this.base);
+    if (!action) return;
+    const method = (el.getAttribute("method") ?? "get").toLowerCase() === "post" ? "post" : "get";
+    const fields: Field[] = [];
+    const labelFor = (input: HTMLElement) =>
+      clean(
+        (input.id && this.labels.get(input.id)) ||
+          input.closest("label")?.text ||
+          input.getAttribute("aria-label") ||
+          input.getAttribute("title") ||
+          input.getAttribute("placeholder") ||
+          input.getAttribute("name") ||
+          "",
+      );
+
+    for (const input of el.querySelectorAll("input, textarea, select")) {
+      const name = input.getAttribute("name") ?? "";
+      const t = (input.getAttribute("type") ?? "text").toLowerCase();
+      if (["submit", "button", "image", "reset", "file"].includes(t)) continue;
+      const base: Field = {
+        kind: "input",
+        type: t,
+        name,
+        label: labelFor(input),
+        required: input.hasAttribute("required"),
+        placeholder: input.getAttribute("placeholder") ?? "",
+        value: input.getAttribute("value") ?? "",
+        multiple: input.hasAttribute("multiple"),
+        options: [],
+      };
+      const n = tag(input);
+      if (n === "textarea") fields.push({ ...base, kind: "textarea", value: input.text });
+      else if (n === "select") {
+        fields.push({
+          ...base,
+          kind: "select",
+          options: input.querySelectorAll("option").map((o) => ({
+            label: clean(o.text),
+            value: o.getAttribute("value") ?? clean(o.text),
+          })),
+        });
+      } else if (t === "radio" || t === "checkbox") {
+        // Group choices that share a name; the group label comes from a fieldset legend.
+        const legend = clean(input.closest("fieldset")?.querySelector("legend")?.text ?? "");
+        const group = fields.find((f) => f.kind === "choice" && f.name === name && f.type === t);
+        const option = { label: labelFor(input), value: input.getAttribute("value") ?? "on" };
+        if (group) group.options.push(option);
+        else fields.push({ ...base, kind: "choice", label: legend || (t === "radio" ? name : ""), options: [option] });
+      } else fields.push(base);
+    }
+
+    const submitEl = el.querySelector('button:not([type=button]):not([type=reset]), input[type=submit]');
+    const submit = clean(submitEl?.getAttribute("value") || submitEl?.text || "") || "Submit";
+    if (fields.some((f) => f.type !== "hidden")) {
+      this.blocks.push({ k: "form", action, method, fields, submit });
+    }
+    // Text that lives inside the form (headings, help copy) still matters.
+    for (const child of el.querySelectorAll("h1, h2, h3, h4, p")) {
+      if (!child.closest("label")) this.block(child, tag(child));
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Grouping
+ * ------------------------------------------------------------------------- */
+
+/** A paragraph that reads like a feed line: short, and either linked or a tiny marker. */
+function rowish(b: Block): boolean {
+  if (b.k !== "p") return false;
+  const text = textOf(b.c).trim();
+  return text.length <= 4 || (text.length <= 240 && b.c.some((s) => s.href));
+}
+
+function collapseRows(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  for (let i = 0; i < blocks.length; ) {
+    let j = i;
+    while (j < blocks.length && rowish(blocks[j])) j++;
+    if (j - i >= 6) {
+      const items: { main: Inline[]; meta: Inline[][] }[] = [];
+      let prefix: Inline[] = [];
+      for (const b of blocks.slice(i, j) as { k: "p"; c: Inline[] }[]) {
+        const text = textOf(b.c).trim();
+        if (text.length <= 4) {
+          prefix = [...prefix, ...b.c, { t: " " }];
+          continue;
+        }
+        if (b.c[0]?.href || prefix.length || items.length === 0) {
+          items.push({ main: tidy([...prefix, ...b.c]), meta: [] });
+          prefix = [];
+        } else items.at(-1)!.meta.push(b.c);
+      }
+      out.push({ k: "rows", items });
+      i = j;
+    } else {
+      out.push(blocks[i]);
+      i++;
+    }
+  }
   return out;
 }
 
-function splitLines(text: string, perLine = 6, max = 8): string[] {
-  const w = text.split(" ");
-  const lines: string[] = [];
-  for (let i = 0; i < w.length && lines.length < max; i += perLine) {
-    lines.push(w.slice(i, i + perLine).join(" "));
+const figure = (b: Block | undefined) =>
+  b?.k === "p" && /\d/.test(textOf(b.c)) && textOf(b.c).trim().length <= 10;
+const caption = (b: Block | undefined) =>
+  b?.k === "p" && !figure(b) && textOf(b.c).trim().length <= 90;
+
+/** "135+" followed by "currencies supported", repeated, reads as a stats row. */
+function collapseStats(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  for (let i = 0; i < blocks.length; ) {
+    let j = i;
+    while (figure(blocks[j]) && caption(blocks[j + 1])) j += 2;
+    if (j - i >= 4) {
+      const items = [];
+      for (let n = i; n < j; n += 2) {
+        items.push({
+          value: textOf((blocks[n] as { c: Inline[] }).c).trim(),
+          label: (blocks[n + 1] as { c: Inline[] }).c,
+        });
+      }
+      out.push({ k: "stats", items });
+      i = j;
+    } else out.push(blocks[i++]);
   }
-  return lines;
+  return out;
 }
 
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32);
-const initials = (s: string) =>
-  s.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "··";
+function wordsIn(blocks: Block[], kinds: Block["k"][]) {
+  let n = 0;
+  for (const b of blocks) {
+    if (!kinds.includes(b.k)) continue;
+    if (b.k === "p" || b.k === "quote") n += wordCount(textOf(b.c));
+    if (b.k === "list") n += b.items.reduce((a, it) => a + wordCount(textOf(it.c)), 0);
+  }
+  return n;
+}
 
-export function heuristicContent(d: PageDigest): SiteContent {
-  const paragraphs = d.blocks.filter((b) => b.tag === "p").map((b) => b.text);
-  const secs = sections(d);
+function group(blocks: Block[], cards: boolean): Section[] {
+  const levels = blocks.flatMap((b) => (b.k === "h" && b.level > 1 ? [b.level] : []));
+  const counts = new Map<number, number>();
+  levels.forEach((l) => counts.set(l, (counts.get(l) ?? 0) + 1));
+  const top = [...counts.keys()].sort((a, b) => a - b).find((l) => counts.get(l)! >= 2) ?? Math.min(...levels, 2);
 
-  const principleCount = secs.length >= 8 ? 6 : Math.min(3, secs.length);
-  const principles = secs.slice(0, principleCount).map((s) => ({ title: s.heading, body: s.body }));
-  const rest = secs.slice(principleCount);
-  const programs = (rest.length >= 4 ? rest.slice(0, 4) : rest.slice(0, 2)).map((s, i) => ({
-    slug: slug(s.heading) || `item-${i + 1}`,
-    name: words(s.heading, 5),
-    kind: `${String(i + 1).padStart(2, "0")}`,
-    tags: [],
-    body: s.body,
-  }));
+  const sections: Section[] = [{ items: [] }];
+  for (const b of blocks) {
+    if (b.k === "h" && b.level <= top) sections.push({ heading: b.text, items: [] });
+    else sections.at(-1)!.items.push(b);
+  }
 
-  const text = d.blocks.map((b) => b.text).join(" ");
-  const stats = [
-    ...text.matchAll(/(?<![\w$])(\$?\d[\d,.]*\s?(?:[kKmMbB]\b|%|\+)?\+?)\s+(?:[a-z]+\s){0,1}([a-z]{4,})/g),
-  ]
-    .filter((m) => !/^(19|20)\d\d$/.test(m[1].trim()) && m[1].replace(/\D/g, "").length >= 2)
-    .map((m) => ({ value: m[1].trim(), label: m[2] }))
-    .filter((s, i, all) => all.findIndex((x) => x.label === s.label) === i)
-    .slice(0, 3);
+  if (!cards) return sections.filter((s) => s.heading || s.items.length);
 
-  const lead = d.description || paragraphs[0] || d.title;
-  const about = paragraphs.find((p) => p.length > 120) ?? lead;
-  const quote = d.quotes[0];
-  const spot = quote
-    ? {
-        initials: initials(quote.cite || d.name),
-        title: quote.cite || d.name,
-        subtitle: d.host,
-        body: words(quote.text, 30),
-        tags: [],
-        ref: d.host,
-      }
-    : {
-        initials: initials(d.name),
-        title: d.name,
-        subtitle: d.host,
-        body: words(firstSentence(lead), 30),
-        tags: (secs.slice(0, 3).map((s) => words(s.heading, 3))),
-        ref: new Date().getFullYear().toString(),
-      };
+  // Short sub-sections under one heading read better side by side.
+  for (const s of sections) {
+    const items = s.items as Block[];
+    const starts = items.flatMap((b, i) => (b.k === "h" ? [i] : []));
+    if (starts.length < 3) continue;
+    const groups = starts.map((start, n) => ({
+      title: (items[start] as { text: string }).text,
+      blocks: items.slice(start + 1, starts[n + 1] ?? items.length),
+    }));
+    const compact = groups.every(
+      (g) =>
+        g.blocks.length <= 4 &&
+        wordsIn(g.blocks, ["p", "list", "quote"]) <= 90 &&
+        g.blocks.every((b) => ["p", "list", "img"].includes(b.k)),
+    );
+    if (!compact) continue;
+    s.items = [...items.slice(0, starts[0]), { k: "cards", cards: groups }];
+  }
+  return sections.filter((s) => s.heading || s.items.length);
+}
 
-  const h2s = d.blocks.filter((b) => b.tag === "h2").map((b) => b.text);
+/* ----------------------------------------------------------------------------
+ * Entry
+ * ------------------------------------------------------------------------- */
+
+export function readPage(html: string, url: URL): Page {
+  const doc = parse(html, { comment: false, blockTextElements: { pre: true, script: false, style: false, noscript: false } });
+  const meta = (sel: string) => clean(doc.querySelector(sel)?.getAttribute("content") ?? "");
+  const baseHref = doc.querySelector("base")?.getAttribute("href");
+  const base = baseHref ? new URL(baseHref, url) : url;
+  const host = url.hostname.replace(/^www\./, "");
+  const title = clean(doc.querySelector("title")?.text ?? "");
+  const titleParts = title.split(/\s[|–—·-]\s/).map(clean).filter(Boolean);
+  // A bare page title isn't a site name; fall back to the host then.
+  const siteName =
+    meta('meta[property="og:site_name"]') ||
+    (titleParts.length > 1 ? [...titleParts].sort((a, b) => a.length - b.length)[0] : host);
+
+  const body = doc.querySelector("body") ?? doc;
+  const reader = new Reader(base);
+  body.querySelectorAll("label[for]").forEach((l) => reader.labels.set(l.getAttribute("for")!, clean(l.text)));
+
+  // Site navigation: the first nav (or header) links, kept as the site's own menu.
+  const navRoot = body.querySelector("nav") ?? body.querySelector("header");
+  const nav: Page["nav"] = [];
+  for (const a of navRoot?.querySelectorAll("a") ?? []) {
+    const label = clean(a.text);
+    const href = absolute(a.getAttribute("href"), base);
+    if (!href || label.length < 2 || label.length > 28 || nav.some((n) => n.href === href || n.label === label)) continue;
+    nav.push({ label, href });
+    if (nav.length >= 7) break;
+  }
+
+  // Content root: the page's main region if it marks one, else the body without chrome.
+  const main =
+    body.querySelector("main") ??
+    body.querySelector('[role="main"]') ??
+    (body.querySelectorAll("article").length === 1 ? body.querySelector("article") : null);
+  const root = main ?? body;
+  root
+    .querySelectorAll('nav, [role="navigation"], [role="search"], [role="complementary"], [role="menu"], [role="toolbar"], [role="tablist"]')
+    .forEach((el) => el.remove());
+  if (!main) root.querySelectorAll("header, footer").forEach((el) => el.remove());
+
+  reader.walk(root);
+  let blocks = reader.blocks;
+
+  // Hero: the page's h1 (or <title>) and an immediately following short paragraph.
+  // Pages with several h1s use them as section labels, so the title leads instead.
+  const h1Count = blocks.filter((b) => b.k === "h" && b.level === 1).length;
+  if (h1Count > 1) blocks = blocks.map((b) => (b.k === "h" && b.level === 1 ? { ...b, level: 2 } : b));
+  const h1Index = blocks.findIndex((b) => b.k === "h" && b.level === 1);
+  const pageTitle =
+    h1Index >= 0 ? (blocks[h1Index] as { text: string }).text : meta('meta[property="og:title"]') || title || siteName;
+  let lead: Inline[] | null = null;
+  if (h1Index >= 0) {
+    const next = blocks[h1Index + 1];
+    const remove = [h1Index];
+    if (next?.k === "p" && wordCount(textOf(next.c)) <= 70 && !rowish(next)) {
+      lead = next.c;
+      remove.push(h1Index + 1);
+    }
+    blocks = blocks.filter((_, i) => !remove.includes(i));
+  }
+
+  blocks = collapseRows(collapseStats(blocks));
+  const prose = wordsIn(blocks, ["p", "quote"]);
+  const all = wordsIn(blocks, ["p", "quote", "list"]) + blocks.filter((b) => b.k === "rows").length * 50;
+  const rowsShare = blocks.filter((b) => b.k === "rows").reduce((a, b) => a + (b.k === "rows" ? b.items.length : 0), 0);
+  // Articles are long runs of real paragraphs, not many short marketing lines.
+  const paragraphs = blocks.filter((b) => b.k === "p").length;
+  const kind: Page["kind"] =
+    rowsShare >= 10 && prose < 400
+      ? "feed"
+      : prose >= 600 && prose / Math.max(all, 1) >= 0.6 && prose / Math.max(paragraphs, 1) >= 22
+        ? "article"
+        : "page";
+
   return {
-    name: d.name,
-    label: "redesign",
-    badge: "",
-    meta: [d.host, `${secs.length} sections`],
-    headline: words(d.h1 || d.title || d.name, 12),
-    tagline: noPeriod(firstSentence(lead)),
-    intro: words(paragraphs.slice(0, 2).join(" ") || lead, 60),
-    highlights: [],
-    stats,
-    spotlight: spot,
-    statement: { title: "about", note: d.host, lines: splitLines(words(about, 48)) },
-    command: `open https://${d.host}`,
-    sections: {
-      principles: { eyebrow: "Overview", title: h2s[0] ?? `What ${d.name} is about`, body: "" },
-      programs: { eyebrow: "More", title: h2s[1] ?? "Take a closer look", body: "" },
-      events: { eyebrow: "Latest", title: "Recent updates", body: "" },
-    },
-    principles,
-    programs,
-    events: d.dated.map((x) => ({ date: x.date, city: d.host, title: x.title, type: "Post" })),
-    faqs: d.faqs,
-    cta: {
-      title: h2s.at(-1) && h2s.at(-1)!.length < 60 ? h2s.at(-1)! : `Visit ${d.name}`,
-      body: words(firstSentence(lead), 25),
-      primary: d.ctas[0] ?? "Get started",
-      secondary: d.ctas[1] ?? "Stay in the loop",
-    },
+    url: url.toString(),
+    host,
+    siteName,
+    title: pageTitle,
+    lead,
+    nav,
+    kind,
+    sections: group(blocks, kind === "page"),
+    words: all,
   };
 }

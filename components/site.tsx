@@ -8,7 +8,7 @@ import type { SiteContent, SiteLinks } from "@/lib/schema";
 
 export type Variant = "v0" | "v1";
 
-const type = {
+export const type = {
   v0: {
     root: "font-sans",
     name: "text-sm font-semibold tracking-tight",
@@ -82,7 +82,7 @@ export function Site({
  * Layout primitives
  * ------------------------------------------------------------------------- */
 
-function Rail({
+export function Rail({
   children,
   className = "",
 }: {
@@ -98,7 +98,7 @@ function Rail({
   );
 }
 
-function Annotation({ children }: { children: React.ReactNode }) {
+export function Annotation({ children }: { children: React.ReactNode }) {
   return (
     <div className="border-t border-gray-950/5">
       <div className="mx-auto max-w-6xl border-x border-gray-950/5 px-4 sm:px-6">
@@ -110,14 +110,14 @@ function Annotation({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Gap({ id }: { id?: string }) {
+export function Gap({ id }: { id?: string }) {
   return (
     <div id={id} className="h-16 scroll-mt-14 border-t border-gray-950/5 sm:h-24" />
   );
 }
 
 /** Outer tinted frame holding stacked inner panels. */
-function Frame({
+export function Frame({
   children,
   className = "",
 }: {
@@ -133,7 +133,7 @@ function Frame({
   );
 }
 
-function Panel({
+export function Panel({
   children,
   className = "",
 }: {
@@ -181,7 +181,7 @@ function Float({
   );
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
+export function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span className="rounded-md bg-gray-950/[0.04] px-1.5 py-0.5 font-mono text-[0.6875rem]/5 text-gray-600 ring-1 ring-gray-950/5 ring-inset">
       {children}
@@ -223,7 +223,7 @@ function Logo() {
   );
 }
 
-function Arrow({ className = "" }: { className?: string }) {
+export function Arrow({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" fill="none" className={`size-4 ${className}`} aria-hidden>
       <path

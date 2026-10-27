@@ -5,14 +5,14 @@ export const metadata: Metadata = {
   title: "Redesign any site — New Internet Society",
 };
 
-const examples = ["htmx.org", "indieweb.org", "solar.lowtechmagazine.com", "are.na/about"];
+const examples = ["paulgraham.com/greatwork.html", "news.ycombinator.com", "en.wikipedia.org/wiki/Hypertext", "httpbin.org/forms/post", "stripe.com"];
 
 export default function RedesignHome() {
   return (
-    <div className="min-h-dvh overflow-x-clip">
+    <div className="min-h-dvh overflow-x-clip font-display">
       <header className="border-b border-gray-950/5">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/" className="text-[17px]/5 tracking-[-0.3px]">
             New Internet Society
           </Link>
           <span className="font-mono text-xs text-gray-500">/redesign</span>
@@ -25,14 +25,14 @@ export default function RedesignHome() {
           <p className="font-mono text-xs/7 text-gray-950/35">paste a link · pick a voice · read it again</p>
         </div>
         <div className="border-t border-gray-950/5 px-4 py-3 sm:px-6">
-          <h1 className="text-[2.75rem]/[1] tracking-[-0.05em] text-balance sm:text-6xl/[1]">
-            Redesign any website.
+          <h1 className="font-serif text-[2.625rem]/[1.12] tracking-[-0.045em] text-balance sm:text-[4rem]/[1.1]">
+            Redesign any website
           </h1>
         </div>
         <div className="border-t border-gray-950/5 px-4 py-3 sm:px-6">
-          <p className="max-w-xl text-lg/8 text-gray-600">
-            We read the page, pull out what it&apos;s actually saying, and set it in one of
-            our two layouts. Your words, re-typeset.
+          <p className="max-w-xl text-lg/8 tracking-[0.1px] text-gray-950/60">
+            We read the page and set its own content (text, links, images, tables and
+            forms) in our layout. Nothing added, nothing rewritten.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function RedesignHome() {
         </div>
 
         <div className="border-t border-gray-950/5 px-4 py-5 sm:px-6">
-          <p className="font-mono text-xs/6 font-medium tracking-widest text-gray-500 uppercase">
+          <p className="text-sm/6 text-gray-950/55">
             Try one
           </p>
           <div className="mt-3 flex flex-wrap gap-2">

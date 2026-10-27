@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { Site, type Variant } from "@/components/site";
-import { redesign, type Redesign } from "@/lib/redesign";
+import { Redesigned } from "@/components/redesigned";
+import type { Variant } from "@/components/site";
+import type { Page } from "@/lib/extract";
+import { redesign } from "@/lib/redesign";
 
 type Search = { url?: string; v?: string };
 
@@ -27,45 +29,36 @@ export default async function RedesignView({
   await connection();
   const variant: Variant = v === "0" ? "v0" : "v1";
 
-  let result: Redesign;
+  let page: Page;
   try {
-    result = await redesign(url);
+    page = await redesign(url);
   } catch (err) {
     return <Failed url={url} message={err instanceof Error ? err.message : "Something went wrong."} />;
   }
 
-  const other = `/redesign/view?url=${encodeURIComponent(url)}&v=${variant === "v1" ? "0" : "1"}`;
+  const href = (to: string) => `/redesign/view?url=${encodeURIComponent(url)}&v=${to}`;
   return (
-    <Site
+    <Redesigned
+      page={page}
       variant={variant}
-      content={result.content}
-      links={{ alternate: other, action: result.url, source: result.url }}
-      banner={<Toolbar result={result} variant={variant} url={url} />}
+      alternate={href(variant === "v1" ? "0" : "1")}
+      banner={<Toolbar page={page} variant={variant} href={href} />}
     />
   );
 }
 
-function Toolbar({ result, variant, url }: { result: Redesign; variant: Variant; url: string }) {
-  const href = (v: string) => `/redesign/view?url=${encodeURIComponent(url)}&v=${v}`;
+function Toolbar({ page, variant, href }: { page: Page; variant: Variant; href: (v: string) => string }) {
   return (
     <div className="bg-gray-950 font-sans text-white">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2 sm:px-6">
-        <p className="flex min-w-0 items-center gap-2 font-mono text-xs/6 text-white/60">
-          <span className="truncate">
-            redesign of <span className="text-white">{result.host}</span>
-          </span>
-          <span
-            title={result.note}
-            className="shrink-0 rounded-full bg-white/10 px-1.5 text-[0.6875rem]/5 text-white/80"
-          >
-            {result.source === "claude" ? "via claude" : "heuristic"}
-          </span>
+        <p className="min-w-0 truncate font-mono text-xs/6 text-white/60">
+          redesign of <span className="text-white">{page.host}</span>
         </p>
         <div className="flex items-center gap-4 text-xs/6">
           <div className="flex rounded-full bg-white/10 p-0.5">
             {[
-              ["0", "Sans"],
               ["1", "Serif"],
+              ["0", "Sans"],
             ].map(([v, label]) => {
               const active = (variant === "v1" ? "1" : "0") === v;
               return (
@@ -79,7 +72,7 @@ function Toolbar({ result, variant, url }: { result: Redesign; variant: Variant;
               );
             })}
           </div>
-          <a href={result.url} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white">
+          <a href={page.url} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white">
             Original ↗
           </a>
           <Link href="/redesign" className="text-white/60 hover:text-white">
@@ -87,11 +80,6 @@ function Toolbar({ result, variant, url }: { result: Redesign; variant: Variant;
           </Link>
         </div>
       </div>
-      {result.note && (
-        <p className="border-t border-white/10 px-4 py-1.5 text-center font-mono text-[0.6875rem]/5 text-white/45">
-          {result.note}
-        </p>
-      )}
     </div>
   );
 }
