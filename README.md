@@ -1,24 +1,32 @@
-# Clarity — a calmer web
+# New Internet Society / Clarity
 
-A Manifest V3 browser extension that redesigns one real page in place: https://httpbin.org/forms/post. Uses locally bundled **Inter**, a responsive form layout, larger option targets, numbered sections, time guidance and accessible inline validation messages.
+A local, reversible browser extension prototype for improving ordinary HTML pages. Version 0.2 replaces the installed extension's httpbin allowlist with a general structural engine. It can activate on HTTP/HTTPS pages without a site adapter.
 
-This is a deterministic, site-specific prototype. It inspects the current URL, form structure, controls and native validity locally. It is not an AI or general-purpose website redesign engine.
+It applies light neutral surfaces, bundled Inter, clearer heading scales, consistent native controls and spacing around existing form groups. It adds no website copy. Original / Redesigned and close are the only added page controls.
 
-## Try it
+## Install
 
-Clarity was loaded unpacked into Dia during development. Open https://httpbin.org/forms/post, choose **Extensions → Clarity — a calmer web**, then **Redesign this page**. The page’s **Original / Redesigned** controls switch views without clearing entries. **×** fully removes the enhancement. Refreshing starts with the original page again.
+1. Open `chrome://extensions` in a Chromium browser and enable Developer mode.
+2. Load this repository's `extension` directory unpacked. If already installed, reload the extension after pulling changes.
+3. Visit an ordinary webpage and activate Clarity from its popup.
 
-For a new Chromium browser installation:
+The engine works on original DOM nodes. It does not clone, reparent, or replace inputs, buttons, forms or website handlers. Original view removes enhancement styles and markers; close also removes the toolbar. Refreshing starts with the original page.
 
-1. Open `chrome://extensions` and enable Developer mode.
-2. Choose **Load unpacked** and select this project's `extension` directory (the directory containing `manifest.json`).
-3. Open the test website and click Clarity in the extension menu.
+## Scope and limits
 
-No build or dependency installation is required. Chrome/Edge should support the same Manifest V3 APIs; the installed extension was exercised in Dia. Firefox and Safari packaging are not included.
+This is a general enhancement prototype, not a guarantee that every website can be redesigned safely. Browser-protected pages, PDF viewers and non-HTML documents are excluded. Cross-origin frames and closed shadow roots stay original. Open shadow roots and accessible same-origin frames are scanned. Editors, canvas, media, complex ARIA widgets and image-backed regions are deliberately left alone. Site JavaScript continues to own validation, conditional fields, navigation and submissions.
 
-## Local preview and tests
+Structural and visibility changes trigger a debounced rescan. Large or unusual applications still need performance and compatibility testing. CSS changes can affect layout even when DOM identity is preserved. Use Original if a site's layout regresses. The e-Visa site is no longer rejected by URL, but its live application flow has **not** yet been validated with this new engine.
 
-Requires Node 22 or newer. No npm dependencies.
+## Privacy
+
+No AI, analytics, external fonts, storage or outbound requests from the enhancement engine. Form values and file contents are neither serialized nor transmitted by it. It inspects DOM structure and computed styles locally. The popup reads only packaged CSS/font resources. Original website scripts and submissions continue to communicate with their original services as before.
+
+Permissions remain `activeTab` and `scripting`, granted temporarily when activated. No persistent all-site host permissions or automatic content scripts.
+
+## Develop and verify
+
+Requires Node 22+. No npm dependencies.
 
 ```sh
 npm start
@@ -26,56 +34,24 @@ npm test
 npm run package
 ```
 
-- http://localhost:4173/forms/post — a saved copy of the actual website's form, enhanced by the same engine and adapter; its POST goes to the local test server.
-- http://localhost:4173/tests — click **Run compatibility tests** for real browser assertions, including native submission.
-- `dist/clarity-extension.zip` — extract and load unpacked; no server is required for the installed extension.
+- `/universal-tests`: click Run general engine tests for the new engine's browser checks.
+- `/` and `/forms/post`: retained, site-specific httpbin design study using Inter.
+- `/1`: retained editorial design study using bundled LT Superior Serif + Inter Display.
+- `/tests`: browser checks for the older httpbin study.
+- `dist/clarity-extension.zip`: packaged extension, ready to extract and load unpacked.
 
-The preview is an explicitly labeled local fixture, not a proxy for the website. Only the installed extension operates on the original live website.
+The two design studies still use the original adapter; they are not previews of universal coverage. Their Tailwind component CSS source is `styles/redesign.css`; generated output is committed. The general engine uses separately scoped CSS to avoid a global Tailwind reset of arbitrary host pages.
 
-## Preserving functionality
+## Implementation
 
-The extension never clones, reparents or replaces existing controls. Form action, method, field names, values, required status, file inputs and website listeners stay intact. It adds headings, hints, error elements and scoped CSS. Errors use native ValidityState; the browser keeps its original validation and submission behavior. No submit handler is installed by Clarity. A MutationObserver handles inserted and removed controls inside the supported form. Attribute rollback respects subsequent site changes.
+- `extension/universal.js`: local classification, document/shadow/frame traversal, mutation observation and rollback.
+- `extension/universal.css`: scoped neutral presentation rules.
+- `extension/popup.*`: user-activated general engine entry point.
+- `extension/core.js`, `extension/adapters/httpbin.js`: retained original design study.
+- `tests/universal-browser.js`: native browser preservation checks.
 
-The original view removes all page enhancement styles, added content and owned attributes; only the small view toolbar remains. Closing the toolbar removes that too. State is per-document, never persisted.
+## Verified checkpoint (2026-10-27)
 
-## Privacy
+9 Node tests passed, including activation on unrelated URLs, restricted schemes, access failure handling and an outbound-API source check. 12 browser checks passed on a local mixed-content fixture: classification, open shadow roots, same-origin frames, node/value/file preservation, editor exclusion, hidden dialog preservation, native invalid-submit blocking, original submit listeners, dynamically inserted inputs, repeated toggles, 375px overflow and exact DOM restoration. These are fixture results, not proof of compatibility with every live application.
 
-No AI calls, analytics, remote fonts, cookies, storage APIs or external data-processing service. The extension does not serialize or store entered form values. The popup fetches only its packaged CSS/font resources. Validity and error messages are evaluated in the browser. Native form submission still sends entries to the original site's `/post` endpoint when the user submits; httpbin echoes the test data. Use synthetic data on this public demo.
-
-Permissions are only `activeTab` and `scripting`. There are no all-site host permissions, background service workers or automatic content scripts. The popup additionally restricts activation to the exact HTTPS httpbin form URL. Permission background: https://developer.chrome.com/docs/extensions/develop/concepts/activeTab
-
-If AI is introduced later, it must be opt-in and disclose the exact outgoing payload before a request. Prefer a minimal structural schema (tag/type/label/layout); exclude values, hidden tokens, uploaded files, full HTML, cookies and private text. This version sends nothing to AI.
-
-## Structure and extending support
-
-- `extension/core.js`: reversible enhancement lifecycle, toolbar and local validity feedback.
-- `extension/adapters/httpbin.js`: URL/structure validation and site-specific presentation additions.
-- `extension/redesign.css`: scoped page design.
-- `extension/font.css`: bundled Inter variable font as an embedded data resource; license included.
-- `extension/popup.*`: user-triggered activation and unsupported-page feedback.
-- `tests/`: captured form, native browser compatibility suite, popup boundary tests and local server tests.
-- `docs/AUDIT.md`: inspection, proposed improvements and scope.
-- `TESTING.md`: observed verification and limitations.
-
-Add future sites as explicit adapters, with exact URL checks, independent style scopes and fixtures covering that site's semantics. Update the popup routing only after testing the adapter. Do not treat generic DOM preservation as proof of compatibility with frameworks, iframe forms, Shadow DOM or entire form replacement.
-
-## Previous project
-
-The earlier portfolio implementation was removed from the active workspace. A complete recoverable archive is at `../pivot-backups/dead-internet-society-before-extension-20261027.tar.gz`. Nothing was deployed or published.
-
-## Design directions
-
-- `/` and `/forms/post`: Light neutral design, Inter typography, subtle gray borders, and original Tailwind component compositions.
-- `/1`: Light neutral editorial design with **LT Superior Serif Regular + Inter Display Regular/Medium**. Both font families are bundled locally; no font CDN requests.
-
-Both previews use the same native form and reversible engine. The installed extension defaults to the Tailwind direction. The editorial direction is currently available through `/1` in the local preview.
-
-`styles/redesign.css` is the editable source, using real Tailwind v4.3.3 `@apply` component compositions. `extension/redesign.css` is the compiled, committed runtime CSS. Preflight is deliberately omitted to avoid resetting the host page. This does not include paid Tailwind Plus components.
-
-To rebuild CSS, obtain the official standalone Tailwind v4.3.3 CLI for your platform from https://github.com/tailwindlabs/tailwindcss/releases/tag/v4.3.3, place it at `.tools/tailwindcss`, make it executable, then run `npm run build:css`. Running the extension or preview needs no CLI. `npm run build:fonts` regenerates the embedded editorial fonts from `assets/fonts/`. Font licenses are included in the extension package.
-
-References: https://tailwindcss.com/ and https://danielsun.space/. Only typography and broad layout inform these versions. Both use a simple neutral palette with no reference-specific gradients, grids, accent colors, or raised-button styling. No personal content or site artwork was copied.
-
-### Current content rule
-
-The latest revision preserves only the original website's visible form copy. No added page heading, section descriptions, numbered steps, status badges, delivery hints, demo notices or preview footer. The sole added page controls are Original/Redesigned and close. Inline error text comes directly from the browser's native `validationMessage`. Both versions share the same neutral light palette and spacing scale; `/1` uses the serif font for the existing fieldset legends. Earlier audit proposals describe the initial version and are superseded by this rule.
+Earlier audits and TESTING.md document the original site-specific prototype. This README describes the current installed extension.

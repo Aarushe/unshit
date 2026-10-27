@@ -19,7 +19,11 @@ export const server = http.createServer(async (req, res) => {
     res.end(fixture.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Clarity · local preview</title>')
       .replace('</body>', `${test ? '<section id="test-panel"><button id="run-tests">Run compatibility tests</button><pre id="test-results">Ready</pre></section>' : ''}<script src="/extension/core.js"></script><script src="/extension/adapters/httpbin.js"></script><script type="module" src="${test ? '/tests/browser-tests.js' : '/preview.js'}"></script></body>`));return;
   }
-  const allowed = ['/extension/', '/tests/browser-tests.js', '/preview.js'];
+  if (url.pathname === '/universal-tests') {
+    res.setHeader('Content-Type','text/html');
+    res.end('<button id=run>Run general engine tests</button><pre id=result>Ready</pre><script src=/extension/universal.js></script><script type=module src=/tests/universal-browser.js></script>'); return;
+  }
+  const allowed = ['/extension/', '/tests/browser-tests.js', '/tests/universal-browser.js', '/preview.js'];
   if (!allowed.some(prefix => url.pathname.startsWith(prefix))) {res.writeHead(404);res.end('Not found');return;}
   const file = path.resolve(root, '.' + decodeURIComponent(url.pathname));
   if (!file.startsWith(root + path.sep)) {res.writeHead(403);res.end();return;}
