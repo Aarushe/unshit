@@ -713,3 +713,21 @@ html.nis-on:not(#nis-a):not(#nis-b) [data-nis][data-nis-menu][data-nis-tone="dar
   border-color: rgb(255 255 255 / 0.12) !important;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 16px 40px -12px rgb(3 7 18 / 0.5) !important;
 }
+
+/* Still and uncluttered, even when restyled in place: no motion, and carousels lose their
+ * arrows, dots and counters (their slides stay, to be scrolled). */
+html.nis-on *:not(#nis-root, #nis-root *),
+html.nis-on *:not(#nis-root, #nis-root *)::before,
+html.nis-on *:not(#nis-root, #nis-root *)::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+html.nis-on :is(.swiper-pagination, .swiper-button-next, .swiper-button-prev, .slick-dots, .slick-arrow,
+  .carousel-indicators, .carousel-control-prev, .carousel-control-next, .owl-dots, .owl-nav,
+  .splide__arrows, .splide__pagination, .glide__arrows, .glide__bullets, .flickity-page-dots,
+  .flickity-prev-next-button, .embla__dots, .embla__buttons):not(#nis-root *) {
+  display: none !important;
+}

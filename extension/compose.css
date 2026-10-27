@@ -1313,3 +1313,139 @@ html.nis-composed body {
 #nis-root:is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(hi), :lang(bn), :lang(ta), :lang(te), :lang(th), :lang(ja), :lang(zh), :lang(ko)) :where(*) {
   letter-spacing: normal;
 }
+
+/* --------------------------------------------------------------------------
+ * Constraints. Whatever a site sends, every block holds it: no motion, no
+ * spills, no runaway lines. These rules come last and win.
+ * ------------------------------------------------------------------------ */
+
+/* Still: nothing animates, slides or parallaxes; only hover colours change. */
+#nis-root *,
+#nis-root *::before,
+#nis-root *::after {
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+#nis-root :where(*) {
+  transition-property: color, background-color, border-color, box-shadow !important;
+  transition-duration: 0.12s !important;
+}
+
+/* Nothing spills: every grid and flex child may shrink, every word may break. */
+#nis-root :where(div, span, p, a, button, h1, h2, h3, li, td, th, label, figure, summary) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+#nis-root .nis-rail {
+  overflow-x: clip;
+}
+#nis-root img,
+#nis-root svg:not(.nis-arrow, .nis-chev) {
+  max-width: 100%;
+}
+
+/* Lines are clamped to what each block is built for. */
+#nis-root .nis-h1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+#nis-root .nis-topictitle,
+#nis-root .nis-cardbody .nis-h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+#nis-root .nis-topictitle .nis-arrow {
+  display: none;
+}
+#nis-root .nis-topic .nis-small,
+#nis-root .nis-cardbody .nis-small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+#nis-root .nis-cardbody .nis-small + .nis-small {
+  -webkit-line-clamp: 2;
+}
+#nis-root .nis-linktitle,
+#nis-root .nis-feedtitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+#nis-root .nis-feedmeta,
+#nis-root .nis-tiletext,
+#nis-root .nis-navlink,
+#nis-root .nis-menulink,
+#nis-root .nis-footlink,
+#nis-root .nis-btn,
+#nis-root .nis-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#nis-root .nis-btn {
+  max-width: 100%;
+}
+#nis-root .nis-lead {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+/* Pictures that are kept sit in a fixed frame, never taller than a screenful. */
+#nis-root .nis-figure .nis-img {
+  width: 100%;
+  max-height: min(420px, 60vh);
+  object-fit: cover;
+  background: var(--tint);
+}
+#nis-root .nis-figure-sm .nis-img {
+  width: auto;
+  max-width: min(100%, 360px);
+}
+#nis-root .nis-icon {
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: contain;
+}
+#nis-root .nis-logo {
+  max-height: 32px !important;
+  max-width: 180px !important;
+  width: auto !important;
+  object-fit: contain;
+}
+
+/* A topic grid fills its rows: one card, two, or a full row, never a ragged gap. */
+#nis-root .nis-topics {
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+
+/* The search bar and its scope selector stay one bar, wrapping cleanly on phones. */
+#nis-root .nis-inlineform {
+  flex-wrap: wrap;
+}
+#nis-root .nis-inlineform > .nis-fieldwrap:first-child {
+  flex: 1 1 240px;
+}
+#nis-root .nis-inlineform > .nis-scope {
+  flex: 0 1 200px;
+}
+
+/* Tables scroll inside their panel; the page never scrolls sideways. */
+#nis-root .nis-tablewrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+#nis-root .nis-table td,
+#nis-root .nis-table th {
+  overflow-wrap: normal;
+  word-break: normal;
+}

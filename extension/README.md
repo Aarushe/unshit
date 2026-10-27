@@ -11,6 +11,21 @@ tinted frames, white panels, mono file bars, hatched stages and LT Superior
 Serif headings. Floating widgets (chat bubbles, cookie bars, promos) are left
 out. Titles are never shown in all caps.
 
+Every site is held to the same rules, whatever it sends:
+
+- Text first. Pictures are kept only when they're content (a captioned figure,
+  a described photo at reading size); hero art, card art, backdrops, banners
+  and promo slides are left out. Linked promo pictures become links named by
+  their alt text.
+- Carousels are read whole: every slide, shown at once as a list or grid; their
+  arrows, dots and "slide 2 of 5" counters are dropped.
+- Nothing moves: no animations, sliding or parallax.
+- Nothing spills: every block clamps its lines (titles, card text, link rows),
+  long words break, tables scroll inside their panel, and the page never
+  scrolls sideways, from phone to desktop.
+- The page's own order is kept; only a page that is a form (sign in, apply)
+  leads with it.
+
 The page itself keeps working. Its form fields, captchas and buttons are its
 own live elements moved into the new layout, links and buttons act through the
 page's own elements, and pop-ups it opens are shown above the redesign.
@@ -60,8 +75,8 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
   controls, and anything floating over the page is a widget. Sections are
   ordered with the page's main task first, then its content, then utilities
   (link lists, contacts), side by side. The blocks render in `compose.css`.
-- It only composes when the result carries the page's text (it checks how much
-  of the readable text made it in). Web apps (editors, maps, canvases, dense
+- It composes whenever most of the page's readable text makes it in (restyling
+  keeps a site's own clutter, so it is the last resort). Web apps (editors, maps, canvases, dense
   control panels), and pages it can't read fully, are restyled in place
   instead by `content.js` and `redesign.css`, as below.
 - The original page stays loaded underneath, hidden. When it changes (single

@@ -45,6 +45,7 @@
   const CTA = /\b(apply|sign ?up|sign ?in|log ?in|login|register|get started|start|open (an )?account|book|buy|order|pay|donate|join|subscribe|download|try|contact us|check|track|renew|request|create|submit|enrol|enroll|shop)\b/i;
   const PHONE = /((?:\(\+?\d{1,4}\)\s*)?\+?\d[\d\s.-]{6,}\d)(?![\d)])/;
   const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+  const GENERIC = /^(home|home ?page|welcome|index|main|start|official (web)?site|default)$/i;
 
   /* --------------------------------------------------------------------------
    * Reading helpers
@@ -128,11 +129,31 @@
     return true;
   }
 
+  /**
+   * Carousels: their slides are content, whatever the carousel hides (off-screen slides
+   * are often aria-hidden, even visible ones). Their controls (arrows, dots, "slide 2 of 5",
+   * pause) are not: the layout shows every slide at once.
+   */
+  const CAROUSEL = /slide|swiper|carousel|slick|owl-|splide|glide|embla|flickity|slider/i;
+  const SLIDES = '[aria-roledescription~="carousel" i], [aria-roledescription~="slide" i], .swiper, .slick-slider, .owl-carousel, .splide, .glide, .embla, .carousel, .flickity-enabled';
+  const inCarousel = (el) => CAROUSEL.test(ident(el)) || !!el.closest(SLIDES);
+  const CHROME_TEXT = /^([‹›«»<>←→↑↓⟨⟩❮❯]|prev(ious)?|next|pause|stop|auto-?play)( (slide|item|page|image))?$|^(go to |show )?(slide|item|page|image) \d+|^displaying (slide|item)|^\d+\s*(of|\/)\s*\d+$/i;
+  const CHROME_CLASS = /(^|[\s_-])(dots?|pagination|indicators?|bullets?|arrows?|swiper-button|slick-(dots|arrow|prev|next)|carousel-(control|indicators)|splide__(arrows?|pagination)|embla__(dots?|buttons?|prev|next)|prev|next|pager)([\s_-]|$)/i;
+  function chrome(el) {
+    const role = el.getAttribute("role") || "";
+    if (!clickable(el) && role !== "status" && role !== "tablist" && !CHROME_CLASS.test(ident(el))) return false;
+    const text = textIn(el);
+    if (CHROME_TEXT.test(text)) return true;
+    // An unlabelled little control (a dot, an arrow drawn in CSS).
+    return !text && !el.querySelector("img") && rect(el).width < 80 && rect(el).height < 80 && (role === "status" || inCarousel(el) || CHROME_CLASS.test(ident(el)) || T(el) === "BUTTON");
+  }
+
   /** Decoration or in-page navigation: not read as content, and not counted as missing. */
   const decoration = (el) =>
-    (el.getAttribute("aria-hidden") === "true" && !/slide|swiper|carousel|slick|owl-item/i.test(ident(el))) ||
+    (el.getAttribute("aria-hidden") === "true" && !inCarousel(el)) ||
     T(el) === "NAV" ||
-    /^(navigation|toolbar|tablist|menubar)$/.test(el.getAttribute("role") || "");
+    /^(navigation|toolbar|tablist|menubar)$/.test(el.getAttribute("role") || "") ||
+    chrome(el);
 
   /** The text a reader would read in an element. */
   function readableText(el) {
@@ -382,7 +403,7 @@
   function repeated(items) {
     if (items.length < 2) return false;
     // Paragraphs in a row are prose, however they're boxed.
-    if (items.every((k) => leaf(k) && !qsa(k, "a[href], button, img, svg").length && !HEADING.test(T(k)))) return false;
+    if (items.every((k) => leaf(k) && !k.matches("a[href], button") && !qsa(k, "a[href], button, img, svg").length && !HEADING.test(T(k)))) return false;
     const tags = new Map();
     for (const k of items) tags.set(T(k), (tags.get(T(k)) || 0) + 1);
     if (Math.max(...tags.values()) < items.length * 0.8) return false;
@@ -394,7 +415,8 @@
     // Laid out in a row, real collections share a width.
     const rs = items.map(rect);
     const row = rs.filter((r) => Math.abs(r.top - rs[0].top) < 4);
-    if (row.length >= 2) {
+    // Bare links (chips, tags) size to their words; anything else in a row shares a width.
+    if (row.length >= 2 && !items.every((k) => T(k) === "A")) {
       const ws = row.map((r) => r.width);
       if (Math.max(...ws) > Math.min(...ws) * 1.35 + 8) return false;
     }
@@ -510,6 +532,14 @@
       }
     }
 
+    // A heading or label over a run of like items (links under their title, "Trending: a b c"): it, then the items.
+    const label = (c) => HEADING.test(T(c)) || c.getAttribute("role") === "heading" || (leaf(c) && !clickable(c) && !qsa(c, "a[href], button").length && words(textIn(c)) <= 8);
+    if (children.length >= 4 && label(children[0]) && !HEADING.test(T(children[1])) && repeated(children.slice(1))) {
+      walk(children[0], out);
+      const coll = readCollection(children.slice(1));
+      if (coll.k !== "none" && (!coll.items || coll.items.length)) out.push(coll);
+      return;
+    }
     if (children.length >= 2 && repeated(children)) {
       const coll = readCollection(children);
       if (coll.k !== "none" && (!coll.items || coll.items.length)) out.push(coll);
@@ -579,7 +609,7 @@
 
   function linkItem(c) {
     const link = c.find((s) => s.link)?.link;
-    const main = c.filter((s) => s.link && s.link === link);
+    const main = c.filter((s) => (s.link && s.link === link) || s.t === "\n");
     const rest = c.filter((s) => !main.includes(s));
     return { title: plain(main) || plain(c), link, meta: plain(rest) };
   }
@@ -611,6 +641,18 @@
       }
       if (!title && (a.k === "h" || a.c.every((s) => s.b) || (flat.length > 1 && words(txt) <= 10 && body.length === 0))) title = a.c;
       else body.push(a.c);
+    }
+    // No heading: the line the item links with is its title (dates and labels around it are details).
+    const linkedAt = body.findIndex((c) => c.length && c.every((x) => x.link) && words(plain(c)) >= 2);
+    if (title && !flat.some((a) => a.k === "h") && !title.some((x) => x.link) && linkedAt >= 0) {
+      body.unshift(title);
+      title = body.splice(linkedAt + 1, 1)[0];
+    }
+    // A figure with its label (13,553 / online services): the label is the title.
+    if (title && /^[\d\s,.+%×x$€£₹¥kKmMbB-]+$/.test(plain(title)) && body.length) {
+      const figure = title;
+      title = body.shift();
+      body.unshift(figure);
     }
     // An item that is just one link: the link is its title.
     if (!title && actions.length === 1 && !body.length) title = actions.splice(0, 1)[0].c;
@@ -668,8 +710,10 @@
         const r = i.icon ? rect(i.icon) : { height: 40 };
         return (alt.trim() || i.link) && r.height >= 20;
       });
-      if (named.length < 2) return { k: "none" };
-      return { k: "coll", kind: "logos", items: named };
+      // Pictures carry no text the layout can hold: linked ones are listed by their names.
+      const linked = named.filter((i) => i.link?.href || i.link?.node);
+      if (linked.length < 2) return { k: "none" };
+      return { k: "coll", kind: "links", items: linked.map((i) => { const pic = i.img || i.icon; return { title: fix(pic?.alt ?? pic?.getAttribute?.("alt") ?? ""), link: i.link, meta: "" }; }) };
     }
     else if (all((i) => i.tile && !i.img && words(plain(i.title)) <= 10 && i.body.length === 0)) kind = "actions";
     else if (all((i) => !i.img && !i.icon && i.body.length === 0 && i.actions.length === 0 && (i.link || i.title.some((s) => s.link)) && words(plain(i.title)) <= 14)) kind = "links";
@@ -957,7 +1001,9 @@
     if (!name) {
       // "Name - tagline" or "Page | Name": the name is the shortest part.
       const parts = document.title.split(/\s[|–—·:-]\s/).map((p) => p.trim()).filter(Boolean);
-      name = parts.length > 1 ? [...parts].sort((a, b) => words(a) - words(b) || a.length - b.length)[0] : parts[0];
+      const named_ = parts.filter((p) => !GENERIC.test(p));
+      const pool = named_.length ? named_ : parts;
+      name = pool.length > 1 ? [...pool].sort((a, b) => words(a) - words(b) || a.length - b.length)[0] : pool[0];
     }
     return { name: fix(name || location.hostname.replace(/^www\./, "")), logo, showName: !logo || (named && !logo.wordmark) };
   }
@@ -1003,7 +1049,7 @@
     const searches = header.flatMap((h) => [...h.querySelectorAll('input[type=search], input[name*=search i], input[placeholder*=search i], input[name=q]')]).filter(shown);
     // The site's own name and text-size switches aren't destinations.
     const name = readIdentity(header).name.toLowerCase();
-    const keep = items.filter((i) => !/^(a\+|a-|a|aa|a−)$/i.test(i.label) && i.label.toLowerCase() !== name);
+    const keep = items.filter((i) => !/^(a\+|a-|a|aa|a−)$/i.test(i.label) && !/^skip (to|navigation)|^jump to/i.test(i.label) && i.label.toLowerCase() !== name);
     return { items: keep.slice(0, 9), actions: actions.slice(0, 2), search: searches[0] || null };
   }
 
@@ -1091,6 +1137,8 @@
     };
     for (const a of atoms) {
       if (a.k === "break") {
+        // A heading standing alone in its part of the page titles the part after it.
+        if (cur && cur.title?.length && !cur.blocks.length) continue;
         cur = null;
         continue;
       }
@@ -1147,10 +1195,31 @@
         continue;
       }
       const a = atoms[i];
+      const chips = a.k === "p" ? linkLine(a.c) : null;
+      if (chips) {
+        if (chips.lead.length) pushProse(out, [{ k: "p", c: chips.lead }]);
+        out.push({ k: "coll", kind: "links", items: chips.items });
+        continue;
+      }
       if (a.k === "p" || a.k === "list" || a.k === "img" || a.k === "sub") pushProse(out, [a]);
       else out.push(a);
     }
     return out;
+  }
+  /** A line that is mostly three or more separate links, with maybe a label before them. */
+  function linkLine(c) {
+    const links = [...new Set(c.filter((s) => s.link).map((s) => s.link.node))];
+    if (links.length < 3) return null;
+    const linked = plain(c.filter((s) => s.link));
+    if (linked.length < plain(c).length * 0.6) return null;
+    const first = c.findIndex((s) => s.link);
+    const lead = c.slice(0, first);
+    if (c.slice(first).some((s) => !s.link && words(s.t.replace(/[|·•,;:/–—-]/g, " ")) > 2)) return null;
+    const items = links.map((node) => {
+      const segs = c.filter((s) => s.link?.node === node);
+      return { title: plain(segs), link: segs[0].link, meta: "" };
+    }).filter((i) => i.title);
+    return { lead: lead.length && plain(lead).replace(/[:\s]+$/, "") ? [{ t: plain(lead).replace(/\s*:\s*$/, "") }] : [], items };
   }
 
   /** Feeds and indexes: a run of short lines led by a link, with meta lines → a link list. */
@@ -1263,7 +1332,7 @@
    * ------------------------------------------------------------------------ */
 
   function readPage() {
-    budget = 150000;
+    budget = 300000;
     lang = html.getAttribute("lang") || undefined;
     const list = parts();
     const header = findHeader(list);
@@ -1298,7 +1367,7 @@
       atoms.splice(0, lead);
     }
     for (const el of document.querySelectorAll("[role=alert], [role=status], marquee, [class*=announcement], [class*=notice-bar], [class*=alert-banner]")) {
-      if (!shown(el) || header.some((h) => h.contains(el)) || widget(el)) continue;
+      if (!shown(el) || header.some((h) => h.contains(el)) || widget(el) || chrome(el) || inCarousel(el)) continue;
       const c = tidy(inlines(el));
       if (c.length && words(plain(c)) <= 70 && !notices.some((n) => plain(n) === plain(c))) notices.push(c);
     }
@@ -1307,31 +1376,34 @@
     for (const s of sections) s.blocks = linkRuns(s.blocks).flatMap(feedify).flatMap(contactify);
     sections = sections.filter((s) => s.blocks.length || s.title?.length);
     sections = teasers(sections).filter((s) => s.blocks.length);
+    // Decorative pictures are left out now, so nothing is laid out around a gap.
+    for (const s of sections) {
+      for (const b of s.blocks) if (b.k === "prose") b.atoms = b.atoms.filter((a) => a.k !== "img" || keepPicture(a));
+      s.blocks = s.blocks.filter((b) => b.k !== "prose" || b.atoms.length);
+    }
+    sections = sections.filter((s) => s.blocks.length || s.title?.length);
 
     // The hero: the page's main heading with its lead, actions and picture.
     const hero = { title: null, lead: [], actions: [], img: null };
+    // The headline opens the page: an <h1> further down is a section's title.
     let h1i = sections.findIndex((s) => s.level === 1);
-    if (h1i < 0 || h1i > 2) {
+    if (h1i < 0 || h1i > 1) {
+      h1i = -1;
       let best = -1;
-      sections.slice(0, 4).forEach((s, i) => {
+      sections.slice(0, 2).forEach((s, i) => {
         if (s.title?.length && s.size >= 28 && (best < 0 || s.size > sections[best].size)) best = i;
       });
       if (best >= 0) h1i = best;
     }
-    if (h1i >= 0 && h1i <= 3) {
+    if (h1i >= 0 && h1i <= 1) {
       const s = sections[h1i];
       hero.title = s.title;
       const prose = s.blocks[0]?.k === "prose" ? s.blocks[0] : null;
       if (prose) {
         while (prose.atoms.length && hero.lead.length < 2 && prose.atoms[0].k === "p" && words(plain(prose.atoms[0].c)) <= 80) hero.lead.push(prose.atoms.shift().c);
-        if (prose.atoms[0]?.k === "img" && !hero.img) hero.img = prose.atoms.shift();
         if (!prose.atoms.length) s.blocks.shift();
       }
       while (s.blocks[0]?.k === "cta") hero.actions.push(s.blocks.shift());
-      if (s.blocks[0]?.k === "prose" && s.blocks[0].atoms[0]?.k === "img" && !hero.img) {
-        hero.img = s.blocks[0].atoms.shift();
-        if (!s.blocks[0].atoms.length) s.blocks.shift();
-      }
       s.title = null;
       if (!s.blocks.length) sections.splice(h1i, 1);
     }
@@ -1361,15 +1433,16 @@
     }
 
     // Order: the primary task first, then content as the page had it, then utilities.
-    const formPage = sections.some((s) => s.blocks.some((b) => b.k === "form" && b.fields.length >= 2));
+    // A form page is one the form is for (sign in, apply); a portal with a search box is not.
+    const formPage = sections.length <= 2 && sections.some((s) => s.blocks.some((b) => b.k === "form" && b.fields.length >= 3));
     const rank = (s) => (role(s) === "task" ? 0 : role(s) === "utility" ? 2 : 1);
-    sections = sections.map((s, i) => ({ s, i })).sort((a, b) => (formPage || rank(a.s) === 0 || rank(b.s) === 0 ? rank(a.s) - rank(b.s) : 0) || rank(a.s) - rank(b.s) || a.i - b.i).map((x) => x.s);
+    if (formPage) sections = sections.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s) - rank(b.s) || a.i - b.i).map((x) => x.s);
 
     // A lone search (or subscribe) bar opening the page belongs in the hero.
     const firstBlock = sections[0]?.blocks[0];
-    if (sections[0] && !sections[0].title?.length && sections[0].blocks.length === 1 && firstBlock && inlineForm(firstBlock)) {
-      hero.form = firstBlock;
-      sections.shift();
+    if (sections[0] && !sections[0].title?.length && firstBlock && inlineForm(firstBlock)) {
+      hero.form = sections[0].blocks.shift();
+      if (!sections[0].blocks.length) sections.shift();
     }
 
     const foot = readFooter(footer);
@@ -1504,6 +1577,13 @@
     h("div", { class: "nis-filebar" }, h("p", {}, h("span", { class: "nis-file" }, file), note ? h("span", { class: "nis-note" }, ` · ${note}`) : null), h("div", { class: "nis-dots" }, h("span"), h("span"), h("span")));
   const Button = (link, label, primary) => act(link, primary ? "nis-btn" : "nis-btn nis-btn-2", label);
 
+  /**
+   * Pictures are kept only where they are content the reader needs (a captioned figure, a
+   * described photo at reading size), never as decoration: no hero art, card art, backdrops,
+   * banners or promo slides. Every page then has the same calm, text-first rhythm.
+   */
+  const keepPicture = (a) => !!a?.src && !a.art && (a.caption ? a.w >= 200 && a.h >= 120 : !!(a.alt || "").trim() && words(a.alt) >= 2 && a.w >= 320 && a.h >= 180);
+
   function Picture(img, cls = "") {
     if (!img?.src) return null;
     return h("img", { class: `nis-img ${cls}`, src: img.src, alt: img.alt || "", loading: "lazy", referrerpolicy: "no-referrer-when-downgrade" });
@@ -1610,7 +1690,6 @@
     if (hero.lead.length) out.push(Rail("nis-pad", hero.lead.map((c) => h("p", { class: "nis-lead" }, Inline(c)))));
     if (hero.actions.length) out.push(Rail("nis-pad nis-actions-row", hero.actions.map((a, i) => Button(a.c.find((s) => s.link)?.link, plain(a.c), i === 0 || a.primary))));
     if (hero.form) out.push(Rail("nis-pad nis-actions-row", InlineForm(hero.form)));
-    if (hero.img) out.push(Rail("nis-pad2", Frame("", Panel("nis-hatch nis-stage", h("div", { class: "nis-float" }, Picture(hero.img, "nis-hero-img"))))));
     return out;
   }
 
@@ -1630,7 +1709,7 @@
       if (a.k === "p") body.append(h("p", {}, Inline(a.c)));
       else if (a.k === "sub") body.append(h("h3", { class: "nis-h3" }, Inline(a.c, { quiet: true })));
       else if (a.k === "list") body.append(h(a.ordered ? "ol" : "ul", {}, a.items.map((c) => h("li", {}, Inline(c)))));
-      else if (a.k === "img") body.append(h("figure", { class: `nis-figure ${a.w < 360 && a.caption ? "nis-figure-sm" : ""}` }, Picture(a), a.alt && !a.art ? h("figcaption", {}, a.alt) : null));
+      else if (a.k === "img" && keepPicture(a)) body.append(h("figure", { class: `nis-figure ${a.w < 360 && a.caption ? "nis-figure-sm" : ""}` }, Picture(a), a.caption && a.alt ? h("figcaption", {}, a.alt) : null));
     }
     return body;
   }
@@ -1656,7 +1735,7 @@
   }
 
   function Cards(block) {
-    if (block.items.every((i) => !i.img && !i.actions.length && words(i.body.map(plain).join(" ")) <= 40) && block.items.length >= 2) return Topics(block);
+    if (block.items.every((i) => !i.actions.length && words(i.body.map(plain).join(" ")) <= 40) && block.items.length >= 2) return Topics(block);
     const grid = h("div", { class: `nis-cards ${block.items.length === 1 ? "nis-one" : ""}` });
     block.items.forEach((it, i) => {
       const title = plain(it.title);
@@ -1669,7 +1748,6 @@
             FileBar(`${slug(title)}.txt`, it.actions.length ? `${it.actions.length} action${it.actions.length > 1 ? "s" : ""}` : null),
             h("div", { class: "nis-cardbody" }, title ? h("h3", { class: "nis-h3" }, Inline(it.title, { quiet: true })) : null, it.body.map((c) => h("p", { class: "nis-small" }, Inline(c)))),
           ),
-          it.img ? Panel("nis-hatch nis-cardstage", h("div", { class: "nis-float" }, Picture(it.img))) : null,
           go || it.actions.length
             ? Panel(
                 "nis-cardfoot",
@@ -1772,7 +1850,7 @@
             "table",
             { class: "nis-table" },
             block.head.length ? h("thead", {}, h("tr", {}, block.head.map((c) => h("th", {}, c)))) : null,
-            h("tbody", {}, block.rows.map((r) => h("tr", {}, r.map((c) => h(c.th ? "th" : "td", { colspan: c.span > 1 ? c.span : null }, c.img ? Picture(c.img, "nis-cellimg") : null, Inline(c.c)))))),
+            h("tbody", {}, block.rows.map((r) => h("tr", {}, r.map((c) => h(c.th ? "th" : "td", { colspan: c.span > 1 ? c.span : null }, Inline(c.c)))))),
           ),
         ),
       ),
@@ -1822,10 +1900,18 @@
   }
 
   /** One text field and its button (search, subscribe, track): a single bar. */
-  const inlineForm = (b) => b.k === "form" && b.fields.length === 1 && b.fields[0].kind === "field" && /^(INPUT)$/.test(T(b.fields[0].node)) && !/^(file|date)$/i.test(b.fields[0].node.type) && b.actions.length <= 2;
+  // One text field (and maybe a scope selector beside it) with its button: a single bar.
+  const inlineForm = (b) =>
+    b.k === "form" &&
+    b.actions.length <= 2 &&
+    b.fields[0]?.kind === "field" &&
+    T(b.fields[0].node) === "INPUT" &&
+    !/^(file|date|checkbox|radio)$/i.test(b.fields[0].node.type) &&
+    (b.fields.length === 1 || (b.fields.length === 2 && b.fields[1].kind === "field" && T(b.fields[1].node) === "SELECT"));
   function InlineForm(block) {
     const f = block.fields[0];
     own(f.node, block.form);
+    const scope = block.fields[1] ? Field(own(block.fields[1].node, block.form) && block.fields[1], "nis-scope") : null;
     const actions = block.actions.map((a) => {
       own(a.node, block.form);
       adopt(a.node);
@@ -1833,7 +1919,7 @@
       return a.node;
     });
     if (!f.node.getAttribute("placeholder") && f.label) f.node.setAttribute("placeholder", f.label);
-    return h("div", { class: "nis-inlineform", role: "group", "aria-label": f.label || null }, Field(f), actions);
+    return h("div", { class: "nis-inlineform", role: "group", "aria-label": f.label || null }, Field(f), scope, actions);
   }
 
   function Form(block) {
@@ -1889,7 +1975,6 @@
     if (b.k === "coll" && b.kind === "actions") return Rail("nis-pad2", Actions(b));
     if (b.k === "coll" && b.kind === "steps") return Rail("nis-flush", Steps(b));
     if (b.k === "coll" && b.kind === "links") return Rail("nis-pad2", Links(b, plain(s.title || [])));
-    if (b.k === "coll" && b.kind === "logos") return Rail("nis-pad", h("div", { class: "nis-logos" }, b.items.map((i) => Picture(i.img || (i.icon ? { src: imgSrc(i.icon) } : null)))));
     if (b.k === "contact") return Rail("nis-pad2", Contact(b));
     if (b.k === "table") return Rail("nis-pad2", Table(b));
     if (b.k === "form") return Rail("nis-pad2", Form(b));
@@ -1959,7 +2044,6 @@
     return h(
       "footer",
       { class: "nis-footer" },
-      f.logos.length ? Rail("nis-pad nis-logos", f.logos.map((l) => Picture(l))) : null,
       f.groups.length ? Rail("nis-pad nis-footcols", f.groups.map((g) => h("div", { class: "nis-footcol" }, g.title ? h("p", { class: "nis-foottitle" }, g.title) : null, g.links.map((l) => act(l.link, "nis-footlink", l.title))))) : null,
       Rail(
         "nis-pad nis-footbar",
@@ -2154,7 +2238,8 @@
       // Too big to read in full: restyle rather than show part of it.
       if (budget < 0) return decline("too large");
       if (!m.sections.length && !m.notices.length && !m.hero.lead.length) return decline("empty");
-      if (total > 400 && covered < total * 0.55) return decline("coverage");
+      // Restyling keeps a site's own clutter, so a page is rebuilt whenever most of it can be read.
+      if (total > 400 && covered < total * 0.4) return decline("coverage");
       model = m;
       signature = signatureOf(m);
       render(m);
