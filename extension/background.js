@@ -2,7 +2,7 @@
 // Once on, it is registered as a content script for that host, so every page,
 // form submission and redirect on the site loads already redesigned.
 //
-// Runs as a service worker in Chrome, Edge, Brave, Opera and Arc, and as an
+// Runs as a service worker in Chrome, Edge, Brave, Opera, Arc and Dia, and as an
 // event page in Firefox and Safari; `chrome.*` is available in all of them.
 
 const KEY = "hosts";

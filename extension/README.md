@@ -38,7 +38,7 @@ page's own elements, and pop-ups it opens are shown above the redesign.
 
 ## Install
 
-**Chrome, Edge, Brave, Opera, Vivaldi, Arc** (Chromium 111+)
+**Chrome, Edge, Brave, Opera, Vivaldi, Arc, Dia** (Chromium 111+)
 
 1. Open `chrome://extensions` (Edge: `edge://extensions`, Opera: `opera://extensions`).
 2. Turn on **Developer mode**.

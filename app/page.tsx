@@ -127,7 +127,7 @@ export default function Home() {
             <a href={repo} target="_blank" rel="noreferrer" className="link">
               GitHub
             </a>{" "}
-            in Chrome, Edge, Brave or Arc:
+            in Chrome, Edge, Brave, Arc or Dia:
           </p>
           <List
             marks={["1.", "2.", "3.", "4."]}
