@@ -41,12 +41,13 @@ function Section({ id, n, title, children }: { id?: string; n: string; title: st
         <span className="font-mono text-xs text-gray-950/35">{n}</span>
       </Row>
       {children}
+      <Row className="h-10 sm:h-14" />
     </>
   );
 }
 
 function Prose({ children }: { children: React.ReactNode }) {
-  return <Row className="space-y-4 px-4 py-4 text-base/7 text-pretty text-gray-950/70 sm:px-6">{children}</Row>;
+  return <Row className="space-y-4 px-4 py-5 text-base/7 text-pretty text-gray-950/70 sm:px-6">{children}</Row>;
 }
 
 function Key({ children }: { children: React.ReactNode }) {
