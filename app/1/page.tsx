@@ -163,15 +163,6 @@ export default function V1() {
         </Row>
       </Section>
 
-      <Row className="px-4 py-5 sm:px-6">
-        <p className="text-sm/6 text-gray-950/55">
-          Made by{" "}
-          <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="text-gray-950 hover:underline">
-            @aarushe_reddy
-          </a>
-          . Set in LT Superior Serif and Inter Display.
-        </p>
-      </Row>
     </Page>
   );
 }

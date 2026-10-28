@@ -20,14 +20,12 @@ export function Page({ children }: { children: React.ReactNode }) {
           <Link href="/" className="text-[17px]/5 tracking-[-0.3px]">
             New Internet Society
           </Link>
-          <a
-            href="https://x.com/aarushe_reddy"
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono text-xs text-gray-500 transition-colors hover:text-gray-950"
-          >
-            by @aarushe_reddy
-          </a>
+          <p className="text-sm/6 text-gray-950/55">
+            Made by{" "}
+            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="text-gray-950 hover:underline">
+              @aarushe_reddy
+            </a>
+          </p>
         </div>
       </header>
 
