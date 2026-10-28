@@ -52,3 +52,101 @@ html {
   :where(h1, h2, h3, h4, h5, h6, p, li, summary, a) {
   line-height: 1.6 !important;
 }
+
+/* Microinteractions. Everything here is quiet and gives way to reduced motion. */
+
+:root {
+  interpolate-size: allow-keywords;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Content arrives the way it does on ashkashyap.me: each piece rises 20px out
+ * of a 10px blur on a spring (stiffness 150, damping 20, sampled below), 50ms
+ * after the one before it, the first time it scrolls into view. Hidden only
+ * once scripts run, so the page never stays blank without them.
+ */
+@utility rise {
+  --spring: linear(0, 0.0427, 0.1393, 0.2612, 0.3894, 0.5117, 0.6215, 0.7156, 0.7932, 0.8553, 0.9033, 0.9394, 0.9656,
+    0.9839, 0.9961, 1.0037, 1.008, 1.01, 1.0105, 1.01, 1.0089, 1.0076, 1.0063, 1.005, 1.0039, 1.0029, 1.0021, 1.0015,
+    1.001, 1.0006, 1.0003, 1.0002, 1, 1);
+  transition: opacity 0.9s var(--spring), translate 0.9s var(--spring), filter 0.9s var(--spring);
+  transition-delay: calc(var(--i, 0) * 50ms);
+  .js &:not([data-shown]) {
+    opacity: 0;
+    translate: 0 20px;
+    filter: blur(10px);
+  }
+}
+
+/* A faint rule under links that inks in from the left on hover. */
+@utility ink {
+  background-image: linear-gradient(currentColor, currentColor),
+    linear-gradient(color-mix(in oklab, currentColor 20%, transparent), color-mix(in oklab, currentColor 20%, transparent));
+  background-size: 0% 1px, 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s var(--ease-out);
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px, 100% 1px;
+  }
+}
+
+/* Keycaps that sit up off the page and press down under the pointer. */
+@utility keycap {
+  box-shadow: inset 0 -1.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
+  transition: translate 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+  &:hover {
+    translate: 0 1px;
+    box-shadow: inset 0 -0.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
+  }
+}
+
+/* Answers open and close smoothly where the browser can animate to auto. */
+details::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition: block-size 0.35s var(--ease-out), opacity 0.35s var(--ease-out),
+    content-visibility 0.35s allow-discrete;
+}
+details[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+/* A section reached from a link glows briefly so the eye lands on it. */
+@keyframes arrive {
+  from {
+    background-color: color-mix(in oklab, var(--color-gray-950) 4%, transparent);
+  }
+}
+:target > div {
+  animation: arrive 1.6s var(--ease-out) 0.3s both;
+}
+
+.edge-blur {
+  transition: opacity 0.4s var(--ease-out);
+  &[data-hidden] {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .rise {
+    opacity: 1 !important;
+    translate: none !important;
+    filter: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after,
+  ::details-content {
+    animation: none !important;
+    transition: none !important;
+  }
+}

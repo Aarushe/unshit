@@ -41,8 +41,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${plexMono.variable} ${superiorSerif.variable} ${interDisplay.variable} antialiased`}
     >
+      <head>
+        {/* Lets CSS hide content that will animate in, only when scripts run, and
+            shows it anyway if the animation script hasn't started in 3s. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "var d=document.documentElement;d.classList.add('js');setTimeout(function(){if(!d.dataset.motion)d.classList.remove('js')},3000)",
+          }}
+        />
+      </head>
       <body className="min-h-dvh bg-white font-sans text-gray-950">
         {children}
       </body>

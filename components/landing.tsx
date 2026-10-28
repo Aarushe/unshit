@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Motion } from "./motion";
 
 export const repo = "https://github.com/Aarushe/new-internet-society";
 
@@ -15,6 +16,7 @@ export function Row({ id, className = "", children }: { id?: string; className?:
 export function Page({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-clip font-display">
+      <div id="page-start" className="h-px -mb-px" />
       <header className="border-b border-gray-950/5">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between border-x border-gray-950/5 px-4 sm:px-6">
           <Link href="/" className="text-[17px]/5 tracking-[-0.3px]">
@@ -22,7 +24,7 @@ export function Page({ children }: { children: React.ReactNode }) {
           </Link>
           <p className="text-sm/6 text-gray-950/55">
             Made by{" "}
-            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="text-gray-950 hover:underline">
+            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="ink text-gray-950">
               @aarushe_reddy
             </a>
           </p>
@@ -34,23 +36,32 @@ export function Page({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 flex-col border-t border-gray-950/5">
           <div className="hatch mx-auto min-h-24 w-full max-w-3xl flex-1 border-x border-gray-950/5" />
         </div>
+        <div id="page-end" className="h-px" />
       </main>
-      <BottomBlur />
+      <EdgeBlur side="top" />
+      <EdgeBlur side="bottom" />
+      <Motion />
     </div>
   );
 }
 
 // Layers of increasing blur, each masked to a band that overlaps the next, so
-// the page softens gradually toward the bottom edge instead of in one step.
+// the page softens gradually toward the edge instead of in one step.
 const blurs = [0.5, 1, 2, 4, 8, 16];
 
-function BottomBlur() {
+function EdgeBlur({ side }: { side: "top" | "bottom" }) {
+  const toward = side === "bottom" ? "bottom" : "top";
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-24">
+    <div
+      id={`${side}-blur`}
+      data-hidden=""
+      aria-hidden
+      className={`edge-blur pointer-events-none fixed inset-x-0 z-10 ${side === "bottom" ? "bottom-0 h-24" : "top-0 h-16"}`}
+    >
       {blurs.map((px, i) => {
         const at = (n: number) => `${Math.min(Math.max(n, 0), 1) * 100}%`;
         const step = 1 / blurs.length;
-        const mask = `linear-gradient(to bottom, transparent ${at(i * step - step)}, black ${at(i * step)}, black ${at(i * step + step)}, transparent ${at(i * step + 2 * step)})`;
+        const mask = `linear-gradient(to ${toward}, transparent ${at(i * step - step)}, black ${at(i * step)}, black ${at(i * step + step)}, transparent ${at(i * step + 2 * step)})`;
         return (
           <div
             key={px}
@@ -59,25 +70,32 @@ function BottomBlur() {
           />
         );
       })}
-      <div className="absolute inset-0 bg-linear-to-b from-white/0 to-white/60" />
+      <div className={`absolute inset-0 from-white/0 to-white/60 ${side === "bottom" ? "bg-linear-to-b" : "bg-linear-to-t"}`} />
     </div>
   );
 }
+
+const headline = "Never navigate a shitty UI in your life ever again";
 
 export function Hero() {
   return (
     <>
       <Row className="h-16 sm:h-24" />
       <Row className="px-4 py-2 sm:px-6">
-        <p className="font-mono text-xs/7 text-gray-950/35">a browser extension · one click · any site</p>
+        <p className="rise font-mono text-xs/7 text-gray-950/35">a browser extension · one click · any site</p>
       </Row>
       <Row className="px-4 py-3 sm:px-6">
         <h1 className="font-serif text-[2.5rem]/[1.12] tracking-[-0.045em] sm:text-[3.5rem]/[1.08]">
-          Never navigate a shitty UI in your life ever again
+          {headline.split(" ").map((word, i) => (
+            <span key={i} className="rise inline-block" style={{ "--i": i + 1 } as React.CSSProperties}>
+              {word}
+              {i < headline.split(" ").length - 1 && "\u00a0"}
+            </span>
+          ))}
         </h1>
       </Row>
       <Row className="px-4 py-3 sm:px-6">
-        <p className="text-lg/8 tracking-[0.1px] text-pretty text-gray-950/60">
+        <p className="rise text-lg/8 tracking-[0.1px] [--i:11] text-pretty text-gray-950/60">
           One click rebuilds the site you&rsquo;re on in a clean, consistent layout. It keeps
           the page&rsquo;s own text, links, images, tables and forms, and leaves the clutter
           behind. Nothing added, nothing rewritten.
@@ -90,32 +108,34 @@ export function Hero() {
 export function Install({ href = `${repo}/tree/main/extension#install` }: { href?: string }) {
   return (
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
-      <a
-        href={href}
-        className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
-      >
-        Install the extension
-        {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
-          <path
-            d="M6.5 4L10.5 8L6.5 12"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="transition-transform duration-200 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
-          />
-          <path
-            d="M3 8L10 8"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="origin-right scale-x-0 transition-transform duration-200 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
-          />
-        </svg>
-      </a>
-      <span className="font-mono text-xs text-gray-950/45">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
+      <span className="rise [--i:12]">
+        <a
+          href={href}
+          className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
+        >
+          Install the extension
+          {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
+            <path
+              d="M6.5 4L10.5 8L6.5 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="transition-transform duration-200 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
+            />
+            <path
+              d="M3 8L10 8"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="origin-right scale-x-0 transition-transform duration-200 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
+            />
+          </svg>
+        </a>
+      </span>
+      <span className="rise font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
     </Row>
   );
 }

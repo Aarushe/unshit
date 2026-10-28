@@ -36,9 +36,9 @@ const questions = [
 function Section({ id, n, title, children }: { id?: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <>
-      <Row id={id} className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <h2 className="font-serif text-[1.75rem]/[1.2] tracking-[-0.03em]">{title}</h2>
-        <span className="font-mono text-xs text-gray-950/35">{n}</span>
+      <Row id={id} className="group/section flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <h2 className="rise font-serif text-[1.75rem]/[1.2] tracking-[-0.03em]">{title}</h2>
+        <span className="font-mono text-xs text-gray-950/35 transition-colors duration-300 group-hover/section:text-gray-950/70">{n}</span>
       </Row>
       {children}
       <Row className="h-10 sm:h-14" />
@@ -47,12 +47,16 @@ function Section({ id, n, title, children }: { id?: string; n: string; title: st
 }
 
 function Prose({ children }: { children: React.ReactNode }) {
-  return <Row className="space-y-4 px-4 py-5 text-base/7 text-pretty text-gray-950/70 sm:px-6">{children}</Row>;
+  return (
+    <Row className="px-4 py-5 text-base/7 text-pretty text-gray-950/70 sm:px-6">
+      <div className="rise space-y-4 [--i:1]">{children}</div>
+    </Row>
+  );
 }
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded-sm bg-gray-950/[0.04] px-1 font-mono text-[0.8125rem] text-gray-950 ring-1 ring-gray-950/10 ring-inset">
+    <kbd className="inline-block rounded-sm bg-gray-950/[0.04] px-1 font-mono text-[0.8125rem] text-gray-950 keycap ring-1 ring-gray-950/10 ring-inset">
       {children}
     </kbd>
   );
@@ -84,10 +88,12 @@ export default function V1() {
           {rules.map(([title, body], i) => (
             <div
               key={title}
-              className={`border-gray-950/5 px-4 py-4 sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} sm:odd:border-r`}
+              className={`border-gray-950/5 px-4 py-4 transition-colors duration-300 hover:bg-gray-950/[0.015] sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} sm:odd:border-r`}
             >
-              <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-              <p className="mt-1 text-sm/6 text-pretty text-gray-950/60">{body}</p>
+              <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
+                <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
+                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60">{body}</p>
+              </div>
             </div>
           ))}
         </Row>
@@ -107,14 +113,14 @@ export default function V1() {
         <Prose>
           <p>
             It isn&rsquo;t in the stores yet. Install it straight from{" "}
-            <a href={repo} target="_blank" rel="noreferrer" className="text-gray-950 underline decoration-gray-950/20 underline-offset-2 hover:decoration-gray-950">
+            <a href={repo} target="_blank" rel="noreferrer" className="ink text-gray-950">
               GitHub
             </a>{" "}
             in Chrome, Edge, Brave or Arc:
           </p>
           <ol className="list-decimal space-y-1 pl-5 marker:font-mono marker:text-xs marker:text-gray-950/35">
             <li>
-              <a href={`${repo}/archive/refs/heads/main.zip`} className="text-gray-950 underline decoration-gray-950/20 underline-offset-2 hover:decoration-gray-950">
+              <a href={`${repo}/archive/refs/heads/main.zip`} className="ink text-gray-950">
                 Download the code
               </a>{" "}
               and unzip it.
@@ -131,7 +137,7 @@ export default function V1() {
           </ol>
           <p className="text-sm/6 text-gray-950/55">
             Firefox 128+ and Safari 17+ work too; the{" "}
-            <a href={`${repo}/tree/main/extension#install`} target="_blank" rel="noreferrer" className="underline decoration-gray-950/20 underline-offset-2 hover:text-gray-950">
+            <a href={`${repo}/tree/main/extension#install`} target="_blank" rel="noreferrer" className="ink transition-colors hover:text-gray-950">
               README
             </a>{" "}
             has the steps.
@@ -153,9 +159,11 @@ export default function V1() {
         <Row>
           {questions.map(([q, a], i) => (
             <details key={q} className={`group border-gray-950/5 ${i > 0 ? "border-t" : ""}`}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[0.9375rem]/6 text-gray-950 sm:px-6 [&::-webkit-details-marker]:hidden">
+              <summary className="rise flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[0.9375rem]/6 text-gray-950 sm:px-6 [&::-webkit-details-marker]:hidden"
+                style={{ "--i": i + 1 } as React.CSSProperties}
+              >
                 {q}
-                <span className="font-mono text-xs text-gray-950/35 group-open:rotate-45">+</span>
+                <span className="font-mono text-xs text-gray-950/35 transition-[rotate,color] duration-300 ease-(--ease-out) group-open:rotate-45 group-hover:text-gray-950/70">+</span>
               </summary>
               <p className="px-4 pb-4 text-sm/6 text-pretty text-gray-950/60 sm:px-6">{a}</p>
             </details>
