@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { Examples, Hero, Page, Row, UrlForm } from "@/components/landing";
+import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
 export const metadata: Metadata = {
   title: "Redesign any site — New Internet Society",
 };
-
-const repo = "https://github.com/Aarushe/new-internet-society";
 
 const rules = [
   ["Text first", "Pictures stay only when they're content. Hero art, banners and promo slides go."],
@@ -27,7 +25,7 @@ const questions = [
   ],
   [
     "Is anything sent to a server?",
-    "The extension runs entirely in your browser. Pasting a link here fetches that public page on our server to read it.",
+    "No. The extension runs entirely in your browser; the page never leaves it.",
   ],
   [
     "What about web apps?",
@@ -63,14 +61,7 @@ export default function V1() {
   return (
     <Page>
       <Hero />
-      <Row className="px-4 py-2 sm:px-6">
-        <p className="font-mono text-xs/7 text-gray-950/45">
-          <a href="#try" className="hover:text-gray-950">/redesign</a> · any public page · free ·{" "}
-          <a href="#extension" className="hover:text-gray-950">Get the extension ↓</a>
-        </p>
-      </Row>
-      <UrlForm id="try" />
-      <Examples />
+      <Install href="#extension" />
 
       <Section n="01" title="One layout for every site">
         <Prose>
@@ -100,29 +91,14 @@ export default function V1() {
         </Row>
       </Section>
 
-      <Section n="03" title="Two ways to use it">
-        <Row className="grid gap-2 p-2 sm:grid-cols-2 sm:p-4">
-          {[
-            ["paste.txt", "On the web", <>Paste a link above. Best for reading one page.</>],
-            [
-              "extension.txt",
-              "In your browser",
-              <>
-                Click the icon or press <Key>Alt</Key> <Key>Shift</Key> <Key>R</Key> on any site.
-                It stays on for that site, every page loads already redesigned. Click again to
-                turn it off.
-              </>,
-            ],
-          ].map(([file, title, body]) => (
-            <div key={file as string} className="rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5">
-              <div className="border-b border-gray-950/5 px-4 py-2.5 font-mono text-xs/5 text-gray-950">{file}</div>
-              <div className="px-4 py-4">
-                <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60">{body}</p>
-              </div>
-            </div>
-          ))}
-        </Row>
+      <Section n="03" title="How to use it">
+        <Prose>
+          <p>
+            Click the icon or press <Key>Alt</Key> <Key>Shift</Key> <Key>R</Key> on any site. It
+            stays on for that site, so every page loads already redesigned. Click again to turn it
+            off.
+          </p>
+        </Prose>
       </Section>
 
       <Section id="extension" n="04" title="Get the extension">
