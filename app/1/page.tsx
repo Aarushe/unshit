@@ -102,7 +102,7 @@ export default function V1() {
 
       <Section n="02" title="The rules">
         <Row>
-          <HoverList className="grid sm:grid-cols-2">
+          <HoverList inset={0} rounded={false} className="grid sm:grid-cols-2">
             {rules.map(([title, body], i) => (
               <div
                 key={title}

@@ -10,10 +10,12 @@ type Box = { x: number; y: number; w: number; h: number };
 export function HoverList({
   className = "",
   inset = 4,
+  rounded = true,
   children,
 }: {
   className?: string;
   inset?: number;
+  rounded?: boolean;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +51,7 @@ export function HoverList({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute top-0 left-0 rounded-lg bg-gray-950/[0.025] motion-reduce:transition-none"
+        className={`pointer-events-none absolute top-0 left-0 bg-gray-950/[0.025] motion-reduce:transition-none ${rounded ? "rounded-lg" : ""}`}
         style={{
           width: box?.w ?? 0,
           height: box?.h ?? 0,
