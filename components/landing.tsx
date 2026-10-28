@@ -35,6 +35,31 @@ export function Page({ children }: { children: React.ReactNode }) {
           <div className="hatch mx-auto min-h-24 w-full max-w-3xl flex-1 border-x border-gray-950/5" />
         </div>
       </main>
+      <BottomBlur />
+    </div>
+  );
+}
+
+// Layers of increasing blur, each masked to a band that overlaps the next, so
+// the page softens gradually toward the bottom edge instead of in one step.
+const blurs = [0.5, 1, 2, 4, 8, 16];
+
+function BottomBlur() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-24">
+      {blurs.map((px, i) => {
+        const at = (n: number) => `${Math.min(Math.max(n, 0), 1) * 100}%`;
+        const step = 1 / blurs.length;
+        const mask = `linear-gradient(to bottom, transparent ${at(i * step - step)}, black ${at(i * step)}, black ${at(i * step + step)}, transparent ${at(i * step + 2 * step)})`;
+        return (
+          <div
+            key={px}
+            className="absolute inset-0"
+            style={{ backdropFilter: `blur(${px}px)`, WebkitBackdropFilter: `blur(${px}px)`, maskImage: mask, WebkitMaskImage: mask }}
+          />
+        );
+      })}
+      <div className="absolute inset-0 bg-linear-to-b from-white/0 to-white/60" />
     </div>
   );
 }
