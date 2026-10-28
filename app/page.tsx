@@ -1,3 +1,4 @@
+import { AltKey } from "@/components/alt-key";
 import { Examples, type Example } from "@/components/examples";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
@@ -112,7 +113,7 @@ export default function Home() {
       <Section n="03" title="How to use it">
         <Prose>
           <p>
-            Click the icon or press <Key>Alt</Key> <Key>Shift</Key> <Key>R</Key> on any site. It
+            Click the icon or press <Key><AltKey /></Key> <Key>Shift</Key> <Key>R</Key> on any site. It
             stays on for that site, so every page loads already redesigned. Click again to turn it
             off.
           </p>
