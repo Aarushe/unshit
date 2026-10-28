@@ -24,7 +24,7 @@ export default async function RedesignView({
   searchParams: Promise<Search>;
 }) {
   const { url, v } = await searchParams;
-  if (!url) redirect("/redesign");
+  if (!url) redirect("/");
   // Always fetched live at request time.
   await connection();
   const variant: Variant = v === "0" ? "v0" : "v1";
@@ -75,7 +75,7 @@ function Toolbar({ page, variant, href }: { page: Page; variant: Variant; href: 
           <a href={page.url} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white">
             Original ↗
           </a>
-          <Link href="/redesign" className="text-white/60 hover:text-white">
+          <Link href="/" className="text-white/60 hover:text-white">
             New URL
           </Link>
         </div>
@@ -96,7 +96,7 @@ function Failed({ url, message }: { url: string; message: string }) {
             <p className="text-base/7 font-semibold tracking-tight">Couldn&apos;t redesign that page</p>
             <p className="mt-1 text-sm/6 text-gray-600">{message}</p>
             <Link
-              href="/redesign"
+              href="/"
               className="mt-5 inline-block rounded-full bg-gray-950 px-4 py-1.5 text-sm/6 font-semibold text-white hover:bg-gray-800"
             >
               Try another URL
