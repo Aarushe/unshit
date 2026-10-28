@@ -104,11 +104,11 @@ export default function V1() {
           {rules.map(([title, body], i) => (
             <div
               key={title}
-              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-200 ease-out hover:bg-fill sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
+              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-500 ease-in-out hover:bg-fill sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
             >
               <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
                 <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-200 ease-out group-hover/item:text-gray-950/75">
+                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-500 ease-in-out group-hover/item:text-gray-950/75">
                   {body}
                 </p>
               </div>
@@ -187,7 +187,7 @@ export default function V1() {
               className={`rise group border-gray-950/5 ${i > 0 ? "border-t" : ""}`}
               style={{ "--i": i + 1 } as React.CSSProperties}
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[0.9375rem]/6 text-gray-950 transition-colors duration-200 ease-out hover:bg-fill sm:px-6 [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[0.9375rem]/6 text-gray-950 transition-colors duration-500 ease-in-out hover:bg-fill sm:px-6 [&::-webkit-details-marker]:hidden">
                 {q}
                 <span className="font-mono text-xs text-gray-950/35 transition-[rotate,color] duration-150 ease-(--ease-out) group-open:rotate-45 group-hover:text-gray-950/70">+</span>
               </summary>
