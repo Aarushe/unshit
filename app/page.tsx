@@ -85,7 +85,7 @@ export default function Home() {
   return (
     <Page>
       <Hero />
-      <Install href="#extension" />
+      <Install />
       <Row className="hatch h-16 sm:h-24" />
 
       <Section n="01" title="One layout for every site">

@@ -133,7 +133,7 @@ const button =
   "group inline-flex items-center gap-1.5 rounded-full py-1.5 text-sm/6 transition-[scale,background-color] duration-150 active:scale-[0.97]";
 
 export function Install({
-  href = `${repo}/tree/main/extension#install`,
+  href = repo,
   examples = "#examples",
 }: {
   href?: string;
@@ -142,7 +142,7 @@ export function Install({
   return (
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
       <span className="enter flex flex-wrap gap-2 [--i:12]">
-        <a href={href} className={`${button} bg-gray-950 pr-3 pl-4 font-semibold text-white`}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={`${button} bg-gray-950 pr-3 pl-4 font-semibold text-white`}>
           Install the extension
           <Arrow />
         </a>
