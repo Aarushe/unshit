@@ -54,16 +54,16 @@ function Prose({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Rows that tint on hover like the rules; each row's mark darkens with it.
+// Rows with a muted mark (a number or a dot) before each item.
 function List({ marks, items }: { marks: string[]; items: React.ReactNode[] }) {
   return (
-    <div className="-mx-2 flex flex-col">
+    <div className="flex flex-col">
       {items.map((item, i) => (
-        <div key={i} className="group/item flex items-baseline gap-3 rounded-lg px-2 py-0.5 transition-colors duration-200 ease-out hover:bg-fill">
-          <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35 transition-colors duration-200 ease-out group-hover/item:text-gray-950/75">
+        <div key={i} className="flex items-baseline gap-3 py-0.5">
+          <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35">
             {marks[i]}
           </span>
-          <span className="transition-colors duration-200 ease-out group-hover/item:text-gray-950/85">{item}</span>
+          <span>{item}</span>
         </div>
       ))}
     </div>
