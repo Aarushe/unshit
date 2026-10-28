@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 // The share card, drawn like the page: hairline rails, the eyebrow, the serif
 // headline and the mark.
-export const alt = "New Internet Society: never navigate a shitty UI in your life ever again";
+export const alt = "New Internet Society: never navigate a shitty website in your life ever again";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -59,7 +59,7 @@ export default async function Image() {
             letterSpacing: -4,
           }}
         >
-          Never navigate a shitty UI in your life ever again
+          Never navigate a shitty website in your life ever again
         </div>
 
         <div

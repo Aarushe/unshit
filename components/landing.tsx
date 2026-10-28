@@ -75,7 +75,7 @@ function EdgeBlur({ side }: { side: "top" | "bottom" }) {
   );
 }
 
-const headline = "Never navigate a shitty UI in your life ever again";
+const headline = "Never navigate a shitty website in your life ever again";
 
 export function Hero() {
   return (
