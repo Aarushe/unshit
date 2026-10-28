@@ -82,7 +82,7 @@ export function Hero() {
     <>
       <Row className="h-16 sm:h-24" />
       <Row className="px-4 py-2 sm:px-6">
-        <p className="enter font-mono text-xs/7 text-gray-950/35">a browser extension · one click · any site</p>
+        <p className="enter font-mono text-xs/7 text-gray-950/35">Browser extension · One click · Any site</p>
       </Row>
       <Row className="px-4 py-3 sm:px-6">
         <h1 className="font-serif text-[2.5rem]/[1.12] tracking-[-0.045em] sm:text-[3.5rem]/[1.08]">

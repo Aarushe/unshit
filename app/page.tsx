@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
 import { Examples, type Example } from "@/components/examples";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
-
-export const metadata: Metadata = {
-  title: "Redesign any site — New Internet Society",
-};
 
 // Before and after screenshots of real sites, in public/examples. An entry
 // without screenshots shows a placeholder.
