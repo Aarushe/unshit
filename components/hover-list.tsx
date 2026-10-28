@@ -7,7 +7,15 @@ type Box = { x: number; y: number; w: number; h: number };
 // One rounded tint that glides to whichever `[data-hover-item]` is under the
 // pointer (after ashkashyap.me's project list). It appears in place on the
 // first item and slides between items after that.
-export function HoverList({ className = "", children }: { className?: string; children: React.ReactNode }) {
+export function HoverList({
+  className = "",
+  inset = 4,
+  children,
+}: {
+  className?: string;
+  inset?: number;
+  children: React.ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<Box | null>(null);
   const [shown, setShown] = useState(false);
@@ -21,7 +29,6 @@ export function HoverList({ className = "", children }: { className?: string; ch
     if (!item || !root) return;
     const a = root.getBoundingClientRect();
     const b = item.getBoundingClientRect();
-    const inset = 4;
     setBox({ x: b.left - a.left + inset, y: b.top - a.top + inset, w: b.width - inset * 2, h: b.height - inset * 2 });
     if (!shown) {
       setGlide(false);

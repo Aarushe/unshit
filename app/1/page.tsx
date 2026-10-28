@@ -55,6 +55,22 @@ function Prose({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Rows that share the rules' gliding highlight; each row's mark darkens under it.
+function List({ marks, items }: { marks: string[]; items: React.ReactNode[] }) {
+  return (
+    <HoverList inset={0} className="-mx-2 flex flex-col">
+      {items.map((item, i) => (
+        <div key={i} data-hover-item className="group/item relative flex items-baseline gap-3 rounded-lg px-2 py-0.5">
+          <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35 transition-colors duration-150 ease-out group-hover/item:text-gray-950/75">
+            {marks[i]}
+          </span>
+          <span className="transition-colors duration-150 ease-out group-hover/item:text-gray-950/85">{item}</span>
+        </div>
+      ))}
+    </HoverList>
+  );
+}
+
 function Key({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="inline-block rounded-sm bg-gray-950/[0.04] px-1 font-mono text-[0.8125rem] text-gray-950 keycap ring-1 ring-gray-950/10 ring-inset">
@@ -91,7 +107,7 @@ export default function V1() {
               <div
                 key={title}
                 data-hover-item
-                className={`group/item relative border-gray-950/5 px-4 py-4 sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} sm:odd:border-r`}
+                className={`group/item relative border-gray-950/5 px-4 py-4 sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
               >
                 <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
                   <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
@@ -124,23 +140,26 @@ export default function V1() {
             </a>{" "}
             in Chrome, Edge, Brave or Arc:
           </p>
-          <ol className="list-decimal space-y-1 pl-5 marker:font-mono marker:text-xs marker:text-gray-950/35">
-            <li>
-              <a href={`${repo}/archive/refs/heads/main.zip`} className="ink text-gray-950">
-                Download the code
-              </a>{" "}
-              and unzip it.
-            </li>
-            <li>
-              Open <code className="font-mono text-sm text-gray-950">chrome://extensions</code> and turn on
-              Developer mode.
-            </li>
-            <li>
-              Click Load unpacked and choose the <code className="font-mono text-sm text-gray-950">extension</code>{" "}
-              folder inside it.
-            </li>
-            <li>Pin Redesign from the puzzle-piece menu.</li>
-          </ol>
+          <List
+            marks={["1.", "2.", "3.", "4."]}
+            items={[
+              <>
+                <a href={`${repo}/archive/refs/heads/main.zip`} className="ink text-gray-950">
+                  Download the code
+                </a>{" "}
+                and unzip it.
+              </>,
+              <>
+                Open <code className="font-mono text-sm text-gray-950">chrome://extensions</code> and turn on
+                Developer mode.
+              </>,
+              <>
+                Click Load unpacked and choose the <code className="font-mono text-sm text-gray-950">extension</code>{" "}
+                folder inside it.
+              </>,
+              "Pin Redesign from the puzzle-piece menu.",
+            ]}
+          />
           <p className="text-sm/6 text-gray-950/55">
             Firefox 128+ and Safari 17+ work too; the{" "}
             <a href={`${repo}/tree/main/extension#install`} target="_blank" rel="noreferrer" className="ink transition-colors hover:text-gray-950">
@@ -153,11 +172,14 @@ export default function V1() {
 
       <Section n="05" title="Limits">
         <Prose>
-          <ul className="list-disc space-y-1 pl-5 marker:text-gray-950/25">
-            <li>It keeps the content a page has. It never invents any.</li>
-            <li>Embedded widgets from other sites, like some payment and login boxes, are left out.</li>
-            <li>Browser pages, extension stores and PDFs can&rsquo;t be redesigned.</li>
-          </ul>
+          <List
+            marks={["·", "·", "·"]}
+            items={[
+              "It keeps the content a page has. It never invents any.",
+              "Embedded widgets from other sites, like some payment and login boxes, are left out.",
+              <>Browser pages, extension stores and PDFs can&rsquo;t be redesigned.</>,
+            ]}
+          />
         </Prose>
       </Section>
 
