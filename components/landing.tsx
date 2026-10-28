@@ -92,7 +92,7 @@ export function Install({ href = `${repo}/tree/main/extension#install` }: { href
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
       <a
         href={href}
-        className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-colors hover:bg-gray-800"
+        className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
       >
         Install the extension
         {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
