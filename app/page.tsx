@@ -16,15 +16,6 @@ const examples: Example[] = [
   },
 ];
 
-const rules = [
-  ["Text first", "Pictures stay only when they're content. Hero art, banners and promo slides go."],
-  ["Nothing moves", "No animations, sliding or parallax. Carousels are shown whole, every slide at once."],
-  ["Nothing spills", "Titles and buttons wrap instead of ending in “…”, and the page never scrolls sideways."],
-  ["Nothing empty", "Unnamed links, arrow-only buttons and pagers are left out."],
-  ["Same order", "The page's own order is kept. Only a page that is a form leads with it."],
-  ["Same words", "Nothing is added or rewritten. Shouted capitals are set in sentence case."],
-];
-
 const questions = [
   [
     "Does it change the site?",
@@ -118,25 +109,7 @@ export default function Home() {
         </Row>
       </Section>
 
-      <Section n="03" title="The rules">
-        <Row className="grid sm:grid-cols-2">
-          {rules.map(([title, body], i) => (
-            <div
-              key={title}
-              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-500 ease-in-out hover:bg-fill sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
-            >
-              <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
-                <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-500 ease-in-out group-hover/item:text-gray-950/75">
-                  {body}
-                </p>
-              </div>
-            </div>
-          ))}
-        </Row>
-      </Section>
-
-      <Section n="04" title="How to use it">
+      <Section n="03" title="How to use it">
         <Prose>
           <p>
             Click the icon or press <Key>Alt</Key> <Key>Shift</Key> <Key>R</Key> on any site. It
@@ -146,7 +119,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section id="extension" n="05" title="Get the extension">
+      <Section id="extension" n="04" title="Get the extension">
         <Prose>
           <p>
             It isn&rsquo;t in the stores yet. Install it straight from{" "}
@@ -185,7 +158,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section n="06" title="Limits">
+      <Section n="05" title="Limits">
         <Prose>
           <List
             marks={["·", "·", "·"]}
@@ -198,7 +171,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section n="07" title="Questions">
+      <Section n="06" title="Questions">
         <Row>
           {questions.map(([q, a], i) => (
             <details
