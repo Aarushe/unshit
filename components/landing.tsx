@@ -24,7 +24,7 @@ export function Page({ children }: { children: React.ReactNode }) {
           </Link>
           <p className="text-sm/6 text-gray-950/55">
             Made by{" "}
-            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="text-gray-950 hover:underline">
+            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="link">
               @aarushe_reddy
             </a>
           </p>

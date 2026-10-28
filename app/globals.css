@@ -98,17 +98,25 @@ html {
   animation-delay: calc(var(--i, 0) * 30ms);
 }
 
-/* A faint rule under links that inks in from the left on hover. */
-@utility ink {
-  background-image: linear-gradient(currentColor, currentColor),
-    linear-gradient(color-mix(in oklab, currentColor 20%, transparent), color-mix(in oklab, currentColor 20%, transparent));
-  background-size: 0% 1px, 100% 1px;
-  background-position: 0 100%;
-  background-repeat: no-repeat;
-  transition: background-size 0.2s var(--ease-out);
-  &:hover,
-  &:focus-visible {
-    background-size: 100% 1px, 100% 1px;
+/* Links as on ashkashyap.me: muted text over a faint underline, both turning
+ * blue on hover, with a slightly larger hit area than the word itself. */
+@utility link {
+  position: relative;
+  color: #575757;
+  text-decoration-line: underline;
+  text-decoration-color: #11111114;
+  text-underline-offset: 3px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: #2563eb;
+      text-decoration-color: #2563eb;
+    }
   }
 }
 

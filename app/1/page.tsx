@@ -135,7 +135,7 @@ export default function V1() {
         <Prose>
           <p>
             It isn&rsquo;t in the stores yet. Install it straight from{" "}
-            <a href={repo} target="_blank" rel="noreferrer" className="ink text-gray-950">
+            <a href={repo} target="_blank" rel="noreferrer" className="link">
               GitHub
             </a>{" "}
             in Chrome, Edge, Brave or Arc:
@@ -144,7 +144,7 @@ export default function V1() {
             marks={["1.", "2.", "3.", "4."]}
             items={[
               <>
-                <a href={`${repo}/archive/refs/heads/main.zip`} className="ink text-gray-950">
+                <a href={`${repo}/archive/refs/heads/main.zip`} className="link">
                   Download the code
                 </a>{" "}
                 and unzip it.
@@ -162,7 +162,7 @@ export default function V1() {
           />
           <p className="text-sm/6 text-gray-950/55">
             Firefox 128+ and Safari 17+ work too; the{" "}
-            <a href={`${repo}/tree/main/extension#install`} target="_blank" rel="noreferrer" className="ink transition-colors hover:text-gray-950">
+            <a href={`${repo}/tree/main/extension#install`} target="_blank" rel="noreferrer" className="link">
               README
             </a>{" "}
             has the steps.
