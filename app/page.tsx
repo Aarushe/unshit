@@ -14,7 +14,11 @@ const examples: Example[] = [
     before: "/examples/indian-evisa-before.png",
     after: "/examples/indian-evisa-after.png",
   },
-  { site: "example-2" },
+  {
+    site: "vfsglobal.com",
+    before: "/examples/vfs-global-before.jpg",
+    after: "/examples/vfs-global-after.png",
+  },
 ];
 
 const rules = [
