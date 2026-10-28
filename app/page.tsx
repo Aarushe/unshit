@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
 export const metadata: Metadata = {
   title: "Redesign any site — New Internet Society",
 };
+
+// Before and after screenshots of real sites, in public/examples. An entry
+// without screenshots shows a hatched placeholder.
+const examples: { site: string; before?: string; after?: string }[] = [
+  { site: "example-1" },
+  { site: "example-2" },
+];
 
 const rules = [
   ["Text first", "Pictures stay only when they're content. Hero art, banners and promo slides go."],
@@ -99,7 +107,38 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section n="02" title="The rules">
+      <Section id="examples" n="02" title="Examples">
+        {examples.map(({ site, before, after }, i) => (
+          <Row key={site} className="grid gap-2 p-2 sm:grid-cols-2 sm:p-4">
+            {(
+              [
+                ["Before", before],
+                ["After", after],
+              ] as const
+            ).map(([label, src]) => (
+              <figure
+                key={label}
+                className="rise overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5"
+                style={{ "--i": i + 1 } as React.CSSProperties}
+              >
+                <figcaption className="flex items-center justify-between border-b border-gray-950/5 px-4 py-2.5 font-mono text-xs/5">
+                  <span className="text-gray-950">{site}</span>
+                  <span className="text-gray-950/45">{label.toLowerCase()}</span>
+                </figcaption>
+                <div className="relative aspect-[16/10]">
+                  {src ? (
+                    <Image src={src} alt={`${site}, ${label.toLowerCase()}`} fill sizes="(min-width: 640px) 360px, 100vw" className="object-cover object-top" />
+                  ) : (
+                    <div className="hatch absolute inset-0" />
+                  )}
+                </div>
+              </figure>
+            ))}
+          </Row>
+        ))}
+      </Section>
+
+      <Section n="03" title="The rules">
         <Row className="grid sm:grid-cols-2">
           {rules.map(([title, body], i) => (
             <div
@@ -117,7 +156,7 @@ export default function Home() {
         </Row>
       </Section>
 
-      <Section n="03" title="How to use it">
+      <Section n="04" title="How to use it">
         <Prose>
           <p>
             Click the icon or press <Key>Alt</Key> <Key>Shift</Key> <Key>R</Key> on any site. It
@@ -127,7 +166,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section id="extension" n="04" title="Get the extension">
+      <Section id="extension" n="05" title="Get the extension">
         <Prose>
           <p>
             It isn&rsquo;t in the stores yet. Install it straight from{" "}
@@ -166,7 +205,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section n="05" title="Limits">
+      <Section n="06" title="Limits">
         <Prose>
           <List
             marks={["·", "·", "·"]}
@@ -179,7 +218,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section n="06" title="Questions">
+      <Section n="07" title="Questions">
         <Row>
           {questions.map(([q, a], i) => (
             <details
