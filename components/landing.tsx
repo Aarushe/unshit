@@ -84,7 +84,6 @@ export function UrlForm({ id }: { id?: string }) {
               </div>
             </div>
             <label className="flex items-center px-4 py-4">
-              <span className="font-mono text-[0.9375rem] text-gray-400">https://</span>
               <input
                 name="url"
                 required
