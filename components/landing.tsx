@@ -105,34 +105,50 @@ export function Hero() {
   );
 }
 
-export function Install({ href = `${repo}/tree/main/extension#install` }: { href?: string }) {
+// A chevron that slides forward while its tail draws in, becoming an arrow.
+function Arrow() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
+      <path
+        d="M6.5 4L10.5 8L6.5 12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="transition-transform duration-150 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
+      />
+      <path
+        d="M3 8L10 8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="origin-right scale-x-0 transition-transform duration-150 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
+      />
+    </svg>
+  );
+}
+
+const button =
+  "group inline-flex items-center gap-1.5 rounded-full py-1.5 pr-3 pl-4 text-sm/6 font-semibold transition-transform duration-100 active:scale-[0.97]";
+
+export function Install({
+  href = `${repo}/tree/main/extension#install`,
+  examples = "#examples",
+}: {
+  href?: string;
+  examples?: string;
+}) {
   return (
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
-      <span className="enter [--i:12]">
-        <a
-          href={href}
-          className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-100 active:scale-[0.97]"
-        >
+      <span className="enter flex flex-wrap gap-2 [--i:12]">
+        <a href={href} className={`${button} bg-gray-950 text-white`}>
           Install the extension
-          {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
-            <path
-              d="M6.5 4L10.5 8L6.5 12"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="transition-transform duration-150 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
-            />
-            <path
-              d="M3 8L10 8"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="origin-right scale-x-0 transition-transform duration-150 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
-            />
-          </svg>
+          <Arrow />
+        </a>
+        <a href={examples} className={`${button} bg-fill text-gray-950`}>
+          See examples
+          <Arrow />
         </a>
       </span>
       <span className="enter font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
