@@ -59,7 +59,7 @@ function List({ marks, items }: { marks: string[]; items: React.ReactNode[] }) {
   return (
     <div className="-mx-2 flex flex-col">
       {items.map((item, i) => (
-        <div key={i} className="group/item flex items-baseline gap-3 rounded-lg px-2 py-0.5 transition-colors duration-200 ease-out hover:bg-gray-950/[0.015]">
+        <div key={i} className="group/item flex items-baseline gap-3 rounded-lg px-2 py-0.5 transition-colors duration-200 ease-out hover:bg-fill">
           <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35 transition-colors duration-200 ease-out group-hover/item:text-gray-950/75">
             {marks[i]}
           </span>
@@ -72,7 +72,7 @@ function List({ marks, items }: { marks: string[]; items: React.ReactNode[] }) {
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-block rounded-sm bg-gray-950/[0.04] px-1 font-mono text-[0.8125rem] text-gray-950 keycap ring-1 ring-gray-950/10 ring-inset">
+    <kbd className="keycap inline-block rounded-sm bg-fill px-1 font-mono text-[0.8125rem] text-gray-950">
       {children}
     </kbd>
   );
@@ -104,7 +104,7 @@ export default function V1() {
           {rules.map(([title, body], i) => (
             <div
               key={title}
-              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-200 ease-out hover:bg-gray-950/[0.015] sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
+              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-200 ease-out hover:bg-fill sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
             >
               <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
                 <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>

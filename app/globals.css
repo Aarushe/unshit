@@ -4,6 +4,8 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
   --font-serif: var(--font-superior), ui-serif, Georgia, serif;
+  /* The one grey fill used across the site: keycaps and hover tints. */
+  --color-fill: color-mix(in oklab, var(--color-gray-950) 3%, transparent);
   --font-display: var(--font-inter-display), var(--font-inter), ui-sans-serif,
     system-ui, sans-serif;
 }
@@ -120,13 +122,11 @@ html {
   }
 }
 
-/* Keycaps that sit up off the page and press down under the pointer. */
+/* Keycaps that press down a pixel under the pointer. */
 @utility keycap {
-  box-shadow: inset 0 -1.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
-  transition: translate 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
+  transition: translate 0.08s var(--ease-out);
   &:hover {
     translate: 0 1px;
-    box-shadow: inset 0 -0.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
   }
 }
 
