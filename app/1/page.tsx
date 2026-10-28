@@ -62,6 +62,7 @@ export default function V1() {
     <Page>
       <Hero />
       <Install href="#extension" />
+      <Row className="hatch h-16 sm:h-24" />
 
       <Section n="01" title="One layout for every site">
         <Prose>
