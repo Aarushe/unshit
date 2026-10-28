@@ -92,9 +92,28 @@ export function Install({ href = `${repo}/tree/main/extension#install` }: { href
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
       <a
         href={href}
-        className="rounded-full bg-gray-950 px-4 py-1.5 text-sm/6 font-semibold text-white transition-colors hover:bg-gray-800"
+        className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-colors hover:bg-gray-800"
       >
         Install the extension
+        {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
+          <path
+            d="M6.5 4L10.5 8L6.5 12"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-200 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
+          />
+          <path
+            d="M3 8L10 8"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="origin-right scale-x-0 transition-transform duration-200 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
+          />
+        </svg>
       </a>
       <span className="font-mono text-xs text-gray-950/45">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
     </Row>
