@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { HoverList } from "@/components/hover-list";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
 export const metadata: Metadata = {
@@ -55,19 +54,19 @@ function Prose({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Rows that share the rules' gliding highlight; each row's mark darkens under it.
+// Rows that tint on hover like the rules; each row's mark darkens with it.
 function List({ marks, items }: { marks: string[]; items: React.ReactNode[] }) {
   return (
-    <HoverList inset={0} className="-mx-2 flex flex-col">
+    <div className="-mx-2 flex flex-col">
       {items.map((item, i) => (
-        <div key={i} data-hover-item className="group/item relative flex items-baseline gap-3 rounded-lg px-2 py-0.5">
-          <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35 transition-colors duration-150 ease-out group-hover/item:text-gray-950/75">
+        <div key={i} className="group/item flex items-baseline gap-3 rounded-lg px-2 py-0.5 transition-colors duration-200 ease-out hover:bg-gray-950/[0.015]">
+          <span className="w-3 shrink-0 font-mono text-xs text-gray-950/35 transition-colors duration-200 ease-out group-hover/item:text-gray-950/75">
             {marks[i]}
           </span>
-          <span className="transition-colors duration-150 ease-out group-hover/item:text-gray-950/85">{item}</span>
+          <span className="transition-colors duration-200 ease-out group-hover/item:text-gray-950/85">{item}</span>
         </div>
       ))}
-    </HoverList>
+    </div>
   );
 }
 
@@ -101,23 +100,20 @@ export default function V1() {
       </Section>
 
       <Section n="02" title="The rules">
-        <Row>
-          <HoverList inset={0} rounded={false} duration={0.45} className="grid sm:grid-cols-2">
-            {rules.map(([title, body], i) => (
-              <div
-                key={title}
-                data-hover-item
-                className={`group/item relative border-gray-950/5 px-4 py-4 sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
-              >
-                <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
-                  <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                  <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-150 ease-out group-hover/item:text-gray-950/75">
-                    {body}
-                  </p>
-                </div>
+        <Row className="grid sm:grid-cols-2">
+          {rules.map(([title, body], i) => (
+            <div
+              key={title}
+              className={`group/item border-gray-950/5 px-4 py-4 transition-colors duration-200 ease-out hover:bg-gray-950/[0.015] sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} ${i % 2 === 0 ? "sm:border-r" : ""}`}
+            >
+              <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
+                <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
+                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-200 ease-out group-hover/item:text-gray-950/75">
+                  {body}
+                </p>
               </div>
-            ))}
-          </HoverList>
+            </div>
+          ))}
         </Row>
       </Section>
 
