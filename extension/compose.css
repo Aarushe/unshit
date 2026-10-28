@@ -27,6 +27,11 @@ html.nis-composed body {
   padding: 0 !important;
   overflow: visible !important;
   overflow-x: clip !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  zoom: 1 !important;
+  border: 0 !important;
   display: block !important;
   position: static !important;
   height: auto !important;
@@ -37,9 +42,16 @@ html.nis-composed body {
   scroll-behavior: auto !important;
 }
 
+/* Our layout is drawn in a shadow root on #nis-root, where no page style reaches;
+ * nothing is inherited from the page either. */
+:host {
+  all: initial !important;
+  display: block !important;
+}
+
 /* Undo the page's styles inside our layout (svg drawings keep their attributes). */
 #nis-root,
-#nis-root :where(*:not(svg, svg *)) {
+#nis-root :where(*:not(svg, svg *, [slot] *)) {
   all: revert;
   box-sizing: border-box;
 }
@@ -292,11 +304,8 @@ html.nis-composed body {
 #nis-root .nis-a-quiet {
   text-decoration: none;
 }
-
 /* Buttons */
-#nis-root .nis-btn,
-#nis-root .nis-control-btn,
-#nis-root .nis-control-btn2 {
+#nis-root .nis-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -316,19 +325,51 @@ html.nis-composed body {
   -webkit-appearance: none;
   appearance: none;
 }
-#nis-root .nis-btn:hover,
-#nis-root .nis-control-btn:hover {
+#nis-root .nis-control-btn,
+#nis-root .nis-control-btn2 {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 40px !important;
+  padding: 8px 18px !important;
+  border: 0 !important;
+  border-radius: 9999px !important;
+  background: var(--ink) !important;
+  color: #fff !important;
+  font: 600 14px/24px var(--sans) !important;
+  letter-spacing: 0 !important;
+  text-decoration: none !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+  height: auto !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+#nis-root .nis-btn:hover {
   background: #1f2937;
 }
-#nis-root .nis-btn-2,
-#nis-root .nis-control-btn2 {
+#nis-root .nis-control-btn:hover {
+  background: #1f2937 !important;
+}
+#nis-root .nis-btn-2 {
   background: #fff;
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line-2);
 }
-#nis-root .nis-btn-2:hover,
-#nis-root .nis-control-btn2:hover {
+#nis-root .nis-control-btn2 {
+  background: #fff !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 0 0 1px var(--line-2) !important;
+}
+#nis-root .nis-btn-2:hover {
   background: #f9fafb;
+}
+#nis-root .nis-control-btn2:hover {
+  background: #f9fafb !important;
 }
 #nis-root .nis-arrow,
 #nis-root .nis-chev {
@@ -370,7 +411,7 @@ html.nis-composed body {
 }
 #nis-root .nis-brand {
   display: flex;
-  flex-shrink: 0;
+  flex-shrink: 1;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -390,10 +431,8 @@ html.nis-composed body {
   object-fit: contain;
 }
 #nis-root .nis-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 220px;
+  white-space: normal;
+  max-width: 260px;
   font: 400 17px/20px var(--sans);
   letter-spacing: -0.3px;
 }
@@ -500,9 +539,9 @@ html.nis-composed body {
   min-height: 32px;
   padding: 4px 14px;
 }
-#nis-root .nis-search .nis-control {
-  width: 200px;
-  min-height: 34px;
+#nis-root .nis-control.nis-control-search {
+  width: 200px !important;
+  min-height: 34px !important;
 }
 #nis-root .nis-burger {
   display: none;
@@ -1065,40 +1104,40 @@ html.nis-composed body {
   display: block;
 }
 #nis-root .nis-control:is(input, select, textarea) {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-height: 40px;
-  margin: 0;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: inset 0 0 0 1px var(--line-2), 0 1px 2px rgb(3 7 18 / 0.04);
-  color: var(--ink);
-  font: 400 15px/24px var(--sans);
-  outline: none;
-  transition: box-shadow 0.15s;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding: 8px 16px !important;
+  border: 0 !important;
+  border-radius: 9999px !important;
+  background: #fff !important;
+  box-shadow: inset 0 0 0 1px var(--line-2), 0 1px 2px rgb(3 7 18 / 0.04) !important;
+  color: var(--ink) !important;
+  font: 400 15px/24px var(--sans) !important;
+  outline: none !important;
+  transition: box-shadow 0.15s !important;
 }
 #nis-root textarea.nis-control {
-  min-height: 96px;
-  border-radius: 14px;
-  resize: vertical;
+  min-height: 96px !important;
+  border-radius: 14px !important;
+  resize: vertical !important;
 }
 #nis-root select.nis-control {
-  -webkit-appearance: none;
-  appearance: none;
-  padding-inline-end: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5 6.5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 16px;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-inline-end: 36px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5 6.5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px !important;
 }
 #nis-root .nis-control:focus {
-  box-shadow: inset 0 0 0 1px rgb(3 7 18 / 0.35), 0 0 0 4px rgb(3 7 18 / 0.06);
+  box-shadow: inset 0 0 0 1px rgb(3 7 18 / 0.35), 0 0 0 4px rgb(3 7 18 / 0.06) !important;
 }
 #nis-root .nis-control::placeholder {
-  color: var(--gray-400);
+  color: var(--gray-400) !important;
 }
 #nis-root .nis-help {
   margin: 0;
@@ -1112,16 +1151,20 @@ html.nis-composed body {
   align-items: center;
   gap: 10px;
 }
-#nis-root .nis-formmedia img {
-  display: block;
-  max-height: 56px;
-  width: auto;
+#nis-root img.nis-media,
+#nis-root .nis-media img {
+  display: block !important;
+  max-height: 56px !important;
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
   border-radius: 8px;
   box-shadow: 0 0 0 1px var(--line);
 }
-#nis-root .nis-formmedia a img,
-#nis-root .nis-formmedia a > img {
-  max-height: 24px;
+#nis-root a.nis-media,
+#nis-root a.nis-media img {
+  display: inline-block !important;
+  max-height: 24px !important;
   box-shadow: none;
 }
 #nis-root .nis-choices {
@@ -1137,11 +1180,12 @@ html.nis-composed body {
   font-size: 15px;
   cursor: pointer;
 }
-#nis-root .nis-choice input {
-  accent-color: var(--ink);
-  width: 16px;
-  height: 16px;
-  margin: 0;
+#nis-root .nis-control-choice {
+  accent-color: #030712 !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
 }
 #nis-root .nis-formacts {
   display: flex;
@@ -1230,6 +1274,15 @@ html.nis-composed body {
   flex: 1;
   min-width: 240px;
 }
+#nis-root .nis-footprint {
+  padding-block: 24px;
+}
+#nis-root .nis-footprint .nis-footmeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
 #nis-root .nis-footmeta p {
   margin: 0;
   font-size: 13px;
@@ -1307,6 +1360,7 @@ html.nis-composed body {
   #nis-root .nis-formacts { padding-inline-start: 0; }
   #nis-root .nis-form { padding: 16px; }
   #nis-root .nis-meta { display: none; }
+  #nis-root .nis-stepbox { height: 72px; margin-bottom: 16px; }
 }
 
 /* Scripts that join or stack letters: no tracking, room for marks. */
@@ -1346,19 +1400,7 @@ html.nis-composed body {
 }
 
 /* Lines are clamped to what each block is built for. */
-#nis-root .nis-h1 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  overflow: hidden;
-}
-#nis-root .nis-topictitle,
-#nis-root .nis-cardbody .nis-h3 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-}
+
 #nis-root .nis-topictitle .nis-arrow {
   display: none;
 }
@@ -1372,33 +1414,35 @@ html.nis-composed body {
 #nis-root .nis-cardbody .nis-small + .nis-small {
   -webkit-line-clamp: 2;
 }
-#nis-root .nis-linktitle,
-#nis-root .nis-feedtitle {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+#nis-root .nis-topic .nis-small,
+#nis-root .nis-cardbody .nis-small {
+  -webkit-line-clamp: 4;
 }
+/* Titles, labels and buttons are never cut: they wrap. Only running text is clamped. */
 #nis-root .nis-feedmeta,
-#nis-root .nis-tiletext,
 #nis-root .nis-navlink,
-#nis-root .nis-menulink,
-#nis-root .nis-footlink,
-#nis-root .nis-btn,
-#nis-root .nis-name {
+#nis-root .nis-menulink {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+#nis-root .nis-tiletext,
+#nis-root .nis-linktitle,
+#nis-root .nis-feedtitle,
+#nis-root .nis-footlink,
+#nis-root .nis-topictitle,
+#nis-root .nis-cardbody .nis-h3 {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 #nis-root .nis-btn {
   max-width: 100%;
+  height: auto;
+  white-space: normal;
+  text-align: center;
+  line-height: 20px;
 }
-#nis-root .nis-lead {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  overflow: hidden;
-}
+
 
 /* Pictures that are kept sit in a fixed frame, never taller than a screenful. */
 #nis-root .nis-figure .nis-img {

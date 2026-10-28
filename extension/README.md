@@ -20,9 +20,15 @@ Every site is held to the same rules, whatever it sends:
 - Carousels are read whole: every slide, shown at once as a list or grid; their
   arrows, dots and "slide 2 of 5" counters are dropped.
 - Nothing moves: no animations, sliding or parallax.
-- Nothing spills: every block clamps its lines (titles, card text, link rows),
-  long words break, tables scroll inside their panel, and the page never
-  scrolls sideways, from phone to desktop.
+- Nothing spills, nothing is cut: titles, labels, tiles and buttons wrap
+  instead of ending in "…" (only long card text is clamped), long words
+  break, tables scroll inside their panel, and the page never scrolls
+  sideways, from phone to desktop.
+- No site's styles reach the redesign: it's drawn in its own shadow root, so
+  a site's fonts, `!important` rules and resets can't change how it looks.
+- Nothing empty is shown: link lists without names, cards without words,
+  pagers (1 2 3 next) and arrow-only buttons are left out; "Know more" links
+  are an item's action, never its title.
 - The page's own order is kept; only a page that is a form (sign in, apply)
   leads with it.
 
@@ -75,13 +81,19 @@ Safari → Settings → Extensions, and allow it on the sites you use it on.
   controls, and anything floating over the page is a widget. Sections are
   ordered with the page's main task first, then its content, then utilities
   (link lists, contacts), side by side. The blocks render in `compose.css`.
-- It composes whenever most of the page's readable text makes it in (restyling
-  keeps a site's own clutter, so it is the last resort). Web apps (editors, maps, canvases, dense
-  control panels), and pages it can't read fully, are restyled in place
-  instead by `content.js` and `redesign.css`, as below.
+- Every page is composed, whatever its layout. Only web apps (editors, maps,
+  canvases, dense control panels) are restyled in place instead, by
+  `content.js` and `redesign.css`, as below.
+- The layout lives in a shadow root on `#nis-root`. The page's own form
+  controls are slotted into it: they stay in the document, so their form,
+  validation, captchas and scripts work as before.
 - The original page stays loaded underneath, hidden. When it changes (single
   page apps, content loading in, a form step), it's read again and the layout
-  updates; never while you're typing in it. "original ↗" in the footer shows
+  updates; never while you're typing in it. Frameworks that take over
+  `<body>` and drop our layout get it back.
+- Pop-ups are shown only when you open one (just after a click, key or
+  submit); promos, notices and cookie prompts the page opens on its own are
+  left out. "original ↗" in the footer shows
   the page as the site built it.
 
 Restyling (the fallback):

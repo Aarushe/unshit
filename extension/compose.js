@@ -24,6 +24,18 @@
   if (!(html instanceof HTMLHtmlElement)) return;
   const top = window.top === window;
 
+  // Our layout lives in a shadow root, so no page style reaches it: its stylesheet is
+  // read now, while the page loads.
+  const SHEET = (() => {
+    try {
+      return globalThis.chrome.runtime.getURL("compose.css"); // (chrome is shadowed below)
+    } catch {
+      return "";
+    }
+  })();
+  let sheetText = "";
+  if (top && SHEET) fetch(SHEET).then((r) => r.text()).then((t) => (sheetText = t), () => {});
+
   // Hold the page back until we've decided, so it never flashes half-done.
   if (top) {
     html.classList.add("nis-wait");
@@ -40,12 +52,16 @@
   const SKIP = new Set(["SCRIPT", "STYLE", "LINK", "META", "NOSCRIPT", "TEMPLATE", "HEAD", "TITLE", "BASE", "IFRAME", "OBJECT", "EMBED", "CANVAS", "AUDIO", "MAP", "DIALOG"]);
   const HEADING = /^H[1-6]$/;
   const CONTROL = "input:not([type=hidden]), select, textarea";
-  const BOILERPLATE = /(^|[\s_-])(page-?tools|toolbar|vector-menu|vector-dropdown|mw-portlet|breadcrumbs?|cookie|consent|gdpr|skip-?link|skip-?to|sr-only|visually-hidden|screen-reader|mw-editsection|noprint|print-only|back-?to-?top|scroll-?top|go-?top|chat-?bot|chatbot|livechat|live-?chat|whatsapp|feedback-?tab|floating|sticky-?cta|social-?share|share-?bar|ad-?slot|advert|ads?-?container|newsletter-?popup|feedback-?(form|widget|tab|banner|survey|prompt)|page-?feedback|c-feedback|page-?rating|was-?this-?helpful)/i;
+  const BOILERPLATE = /(^|[\s_-])(page-?tools|toolbar|vector-menu|vector-dropdown|mw-portlet|breadcrumbs?|cookie|consent|gdpr|skip-?link|skip-?to|sr-only|visually-hidden|screen-reader|mw-editsection|noprint|print-only|back-?to-?top|scroll-?top|go-?top|chat-?bot|chatbot|livechat|live-?chat|whatsapp|feedback-?tab|floating|sticky-?cta|social-?share|share-?bar|ad-?slot|advert|ads?-?container|newsletter-?popup|feedback-?(form|widget|tab|banner|survey|prompt)|page-?feedback|c-feedback|page-?rating|was-?this-?helpful|onetrust|optanon|fides|cookiebot|usercentrics|didomi|truste|qc-cmp|sp_message|cmplz|osano|iubenda|termly|cc-window|cc-banner)/i;
   const WIDGET_TEXT = /\b(cookies?|consent|chat with|live chat|we use cookies|accept all)\b/i;
   const CTA = /\b(apply|sign ?up|sign ?in|log ?in|login|register|get started|start|open (an )?account|book|buy|order|pay|donate|join|subscribe|download|try|contact us|check|track|renew|request|create|submit|enrol|enroll|shop)\b/i;
   const PHONE = /((?:\(\+?\d{1,4}\)\s*)?\+?\d[\d\s.-]{6,}\d)(?![\d)])/;
   const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
   const GENERIC = /^(home|home ?page|welcome|index|main|start|official (web)?site|default)$/i;
+  // Link words that say "go there", not what is there.
+  const MORE = /^(know|read|learn|view|see|show|find out|discover|explore) ?(more|all|details|now)?\s*[›»→>]*$|^(more|details|click here|here|open|go)\s*[›»→>]*$/i;
+  // Page numbers and pager words.
+  const PAGER = /^(\d{1,3}|next|prev(ious)?|first|last|older|newer|[«»‹›<>…]+|\.\.\.)$/i;
 
   /* --------------------------------------------------------------------------
    * Reading helpers
@@ -407,6 +423,9 @@
     const tags = new Map();
     for (const k of items) tags.set(T(k), (tags.get(T(k)) || 0) + 1);
     if (Math.max(...tags.values()) < items.length * 0.8) return false;
+    // Items hold one thing: a part of the page with several headings, or taller than a
+    // screenful, is a section of its own, however alike its neighbours look.
+    if (items.some((k) => qsa(k, "h1, h2, h3, h4, [role=heading]").filter(shown).length > 1 || rect(k).height > Math.max(window.innerHeight * 1.5, 1100))) return false;
     const shapes = items.map(shape);
     if (shapes.some((s) => s.text === 0 && !s.big && !s.icon)) return false;
     if (shapes.some((s) => s.text > 260)) return false;
@@ -511,7 +530,7 @@
     const outer = el.parentElement?.closest("a[href]");
     const cardSized = (a) => a && qsa(a, "h1, h2, h3, h4, h5, h6").length <= 1 && squash(a.textContent || "").length <= 400;
     const wrapping = clickable(el) ? el : cardSized(outer) ? outer : null;
-    const self = wrapping && !(root && root.contains(wrapping)) ? { link: linkOf(wrapping) } : {};
+    const self = wrapping && !(host && host.contains(wrapping)) ? { link: linkOf(wrapping) } : {};
     // Heading tags are headings whatever their inside looks like (lines set as blocks, animated words).
     if (looksHeading(el, cs, text) && (leaf(el) || ((HEADING.test(t) || el.getAttribute("role") === "heading") && !has(el, CONTROL) && !qsa(el, "img").some((i) => rect(i).width >= 100)))) {
       out.push({ k: "h", level: headingLevel(el, cs), c: tidy(inlines(el, [], self)), size: parseFloat(cs.fontSize), el });
@@ -526,6 +545,7 @@
       if (items.length && items.every((li) => leaf(li)) && !items.some((li) => li.querySelector("img, svg, picture"))) {
         const runs = items.map((li) => tidy(inlines(li))).filter((c) => c.length);
         const linky = runs.filter((c) => c.some((s) => s.link) && plain(c.filter((s) => s.link)).length >= plain(c).length * 0.6).length;
+        if (runs.length && runs.every((c) => PAGER.test(plain(c)))) return;
         if (linky >= runs.length * 0.7 && runs.length >= 2) out.push({ k: "coll", kind: "links", items: runs.map((c) => linkItem(c)) });
         else out.push({ k: "list", ordered: t === "OL", items: runs });
         return;
@@ -550,6 +570,8 @@
       const c = tidy(inlines(el, [], self));
       if (c.length) {
         const lone = c.length === 1 && c[0].link;
+        // A control drawn as a symbol (×, ☰, ‹) says nothing on its own.
+        if (lone && !/[\p{L}\p{N}]/u.test(c[0].t)) return;
         if (lone && (T(el) === "A" || T(el) === "BUTTON" || painted(el)) && words(c[0].t) <= 8) out.push({ k: "cta", c, primary: buttonTone(el) });
         else out.push({ k: "p", c, size: parseFloat(cs.fontSize), el });
       }
@@ -654,6 +676,11 @@
       title = body.shift();
       body.unshift(figure);
     }
+    // "Know more" names no item: it's the item's action, and the next line is its title.
+    if (title && MORE.test(plain(title)) && body.length) {
+      actions.push({ k: "cta", c: title, primary: false });
+      title = body.shift();
+    }
     // An item that is just one link: the link is its title.
     if (!title && actions.length === 1 && !body.length) title = actions.splice(0, 1)[0].c;
     if (!title && body.length) title = body.shift();
@@ -717,7 +744,12 @@
     }
     else if (all((i) => i.tile && !i.img && words(plain(i.title)) <= 10 && i.body.length === 0)) kind = "actions";
     else if (all((i) => !i.img && !i.icon && i.body.length === 0 && i.actions.length === 0 && (i.link || i.title.some((s) => s.link)) && words(plain(i.title)) <= 14)) kind = "links";
-    if (kind === "links") return { k: "coll", kind, items: items.map((i) => ({ title: plain(i.title), link: i.link || i.title.find((s) => s.link)?.link, meta: "" })) };
+    if (kind === "links") {
+      const rows = items.map((i) => ({ title: plain(i.title), link: i.link || i.title.find((s) => s.link)?.link, meta: "" }));
+      // A pager (1 2 3 next) isn't content: the layout shows what's on this page.
+      if (rows.every((r) => PAGER.test(r.title))) return { k: "none" };
+      return { k: "coll", kind, items: rows };
+    }
     return { k: "coll", kind, items };
   }
 
@@ -1381,6 +1413,17 @@
       for (const b of s.blocks) if (b.k === "prose") b.atoms = b.atoms.filter((a) => a.k !== "img" || keepPicture(a));
       s.blocks = s.blocks.filter((b) => b.k !== "prose" || b.atoms.length);
     }
+    // Nothing is laid out empty: items without words, link lists without names, forms that are
+    // only pager or arrow buttons.
+    const named = (t) => /[\p{L}\p{N}]/u.test(t || "") && !PAGER.test((t || "").trim());
+    for (const s of sections) {
+      for (const b of s.blocks) {
+        if (b.k === "coll" && b.items && b.kind === "links") b.items = b.items.filter((i) => named(i.title));
+        else if (b.k === "coll" && b.items && b.kind !== "logos") b.items = b.items.filter((i) => named(plain(i.title || [])) || (i.body || []).some((c) => named(plain(c))));
+        if (b.k === "form") b.actions = b.actions.filter((a) => named(a.node.value || textIn(a.node) || a.node.getAttribute("aria-label") || a.node.getAttribute("title") || "") || b.fields.length);
+      }
+      s.blocks = s.blocks.filter((b) => !(b.k === "coll" && b.items && !b.items.length) && !(b.k === "form" && !b.fields.length && !b.actions.length) && !(b.k === "contact" && !b.items.length));
+    }
     sections = sections.filter((s) => s.blocks.length || s.title?.length);
 
     // The hero: the page's main heading with its lead, actions and picture.
@@ -1390,9 +1433,8 @@
     if (h1i < 0 || h1i > 1) {
       h1i = -1;
       let best = -1;
-      sections.slice(0, 2).forEach((s, i) => {
-        if (s.title?.length && s.size >= 28 && (best < 0 || s.size > sections[best].size)) best = i;
-      });
+      // A display-size heading opening the page (not one further down).
+      if (sections[0]?.title?.length && sections[0].size >= 28) best = 0;
       if (best >= 0) h1i = best;
     }
     if (h1i >= 0 && h1i <= 1) {
@@ -1419,6 +1461,9 @@
       hero.eyebrow = identity.name !== plain(sections[0].title) ? identity.name : "";
       sections[0].title = null;
     }
+    // A headline kept for screen readers only still names the page.
+    const quietH1 = !hero.title && [...document.querySelectorAll("h1")].find((e) => !header.some((h) => h.contains(e)) && !footer.some((f) => f.contains(e)) && words(e.textContent || "") >= 1 && words(e.textContent || "") <= 14);
+    if (quietH1) hero.title = [{ t: fix(quietH1.textContent) }];
     if (!hero.title) {
       const parts = document.title.split(/\s[|–—·:-]\s/);
       hero.title = [{ t: fix(parts[0] || identity.name) }];
@@ -1655,12 +1700,12 @@
       navEl.append(wrap);
     }
     document.addEventListener("click", (e) => {
-      if (openMenu && !openMenu.contains(e.target)) close();
+      if (openMenu && !e.composedPath().includes(openMenu)) close();
     });
     document.addEventListener("keydown", (e) => e.key === "Escape" && close());
 
     const tools = h("div", { class: "nis-tools" });
-    if (nav.search) tools.append(Field({ node: adopt(nav.search), label: "" }, "nis-search"));
+    if (nav.search) tools.append(Field({ node: nav.search, label: "" }, "nis-search", "nis-control-search"));
     nav.actions.forEach((a, i) => tools.append(Button(a.link, a.label, i === nav.actions.length - 1)));
     const burger = h("button", { class: "nis-burger", type: "button", "aria-label": "Menu", onclick: () => root.classList.toggle("nis-navopen") }, svg('<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 5h11M2.5 11h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'));
     return h("header", { class: "nis-header" }, h("div", { class: "nis-headin" }, brand, navEl, tools, nav.items.length ? burger : null));
@@ -1883,6 +1928,20 @@
     node.__nisAdopted = true;
     return node;
   }
+  /**
+   * A live element of the page shown in our layout: it stays in the document (a child of
+   * our host, so its form, labels and scripts still find it) and is drawn at a <slot>.
+   */
+  let slotCount = 0;
+  let lightNodes = [];
+  function place(node, ...classes) {
+    adopt(node);
+    node.__nisSlotName ??= `nis-s${++slotCount}`;
+    node.setAttribute("slot", node.__nisSlotName);
+    node.classList.add(...classes);
+    lightNodes.push(node);
+    return h("slot", { name: node.__nisSlotName });
+  }
   function own(node, form) {
     // Keep a moved control owned by its form, so it submits and validates as before.
     if (form && node.form === form && !node.hasAttribute("form")) {
@@ -1893,10 +1952,8 @@
     return node;
   }
 
-  function Field(f, cls = "") {
-    const node = adopt(f.node);
-    node.classList.add("nis-control");
-    return h("span", { class: `nis-fieldwrap ${cls}` }, node);
+  function Field(f, cls = "", ...extra) {
+    return h("span", { class: `nis-fieldwrap ${cls}` }, place(f.node, "nis-control", ...extra));
   }
 
   /** One text field and its button (search, subscribe, track): a single bar. */
@@ -1914,9 +1971,7 @@
     const scope = block.fields[1] ? Field(own(block.fields[1].node, block.form) && block.fields[1], "nis-scope") : null;
     const actions = block.actions.map((a) => {
       own(a.node, block.form);
-      adopt(a.node);
-      a.node.classList.add("nis-control-btn");
-      return a.node;
+      return place(a.node, "nis-control-btn");
     });
     if (!f.node.getAttribute("placeholder") && f.label) f.node.setAttribute("placeholder", f.label);
     return h("div", { class: "nis-inlineform", role: "group", "aria-label": f.label || null }, Field(f), scope, actions);
@@ -1935,7 +1990,11 @@
             h(
               "div",
               { class: "nis-choices" },
-              f.options.map((o) => h("label", { class: "nis-choice" }, own(adopt(o.node), block.form), h("span", {}, o.label))),
+              f.options.map((o) => {
+                own(o.node, block.form);
+                // A label in our layout can't reach the page's control: its clicks are passed on.
+                return h("label", { class: "nis-choice", onclick: (e) => e.composedPath()[0] !== o.node && (e.preventDefault(), o.node.click()) }, place(o.node, "nis-control-choice"), h("span", {}, o.label));
+              }),
             ),
           ),
         );
@@ -1947,16 +2006,14 @@
         h(
           "div",
           { class: "nis-formrow" },
-          h("label", { class: "nis-label", for: f.node.id || null }, label, f.required ? h("span", { class: "nis-req" }, " *") : null),
-          h("div", { class: "nis-fieldcol" }, f.media ? h("div", { class: "nis-formmedia" }, f.media.map((n) => adopt(n))) : null, Field(f), f.help ? h("p", { class: "nis-help" }, f.help) : null),
+          h("label", { class: "nis-label", onclick: () => f.node.focus() }, label, f.required ? h("span", { class: "nis-req" }, " *") : null),
+          h("div", { class: "nis-fieldcol" }, f.media ? h("div", { class: "nis-formmedia" }, f.media.map((n) => place(n, "nis-media"))) : null, Field(f), f.help ? h("p", { class: "nis-help" }, f.help) : null),
         ),
       );
     }
     const actions = block.actions.map((a) => {
       own(a.node, block.form);
-      adopt(a.node);
-      a.node.classList.add(a.primary || block.actions.length === 1 ? "nis-control-btn" : "nis-control-btn2");
-      return a.node;
+      return place(a.node, a.primary || block.actions.length === 1 ? "nis-control-btn" : "nis-control-btn2");
     });
     return Frame(
       "nis-formframe",
@@ -2039,16 +2096,39 @@
     return out;
   }
 
+  /** The footer's small print: short lines (labels, dates, links) run together as one line each. */
+  function smallPrint(text) {
+    const lines = text.filter((c) => /[\p{L}\p{N}]{2}/u.test(plain(c)));
+    const out = [];
+    let run = [];
+    const flush = () => {
+      if (run.length) out.push(run.flatMap((c, i) => (i ? [{ t: " · " }, ...c] : c)));
+      run = [];
+    };
+    for (const c of lines) {
+      if (words(plain(c)) <= 6) run.push(c);
+      else {
+        flush();
+        out.push(c);
+      }
+    }
+    flush();
+    return out;
+  }
+
   function Footer(m, onOriginal) {
     const f = m.footer;
+    const print = smallPrint(f.text);
+    const long = words(print.map(plain).join(" ")) > 40;
     return h(
       "footer",
       { class: "nis-footer" },
       f.groups.length ? Rail("nis-pad nis-footcols", f.groups.map((g) => h("div", { class: "nis-footcol" }, g.title ? h("p", { class: "nis-foottitle" }, g.title) : null, g.links.map((l) => act(l.link, "nis-footlink", l.title))))) : null,
+      long ? Rail("nis-pad nis-footprint", h("div", { class: "nis-footmeta" }, print.map((c) => h("p", {}, Inline(c, { quiet: true }))))) : null,
       Rail(
         "nis-pad nis-footbar",
         h("div", { class: "nis-brand nis-brand-sm" }, m.identity.logo?.src ? h("img", { class: "nis-logo", src: m.identity.logo.src, alt: "" }) : null, h("span", { class: "nis-name" }, m.identity.name)),
-        h("div", { class: "nis-footmeta" }, f.text.map((c) => h("p", {}, Inline(c, { quiet: true })))),
+        long ? null : h("div", { class: "nis-footmeta" }, print.map((c) => h("p", {}, Inline(c, { quiet: true })))),
         h("div", { class: "nis-footlinks" }, h("button", { type: "button", class: "nis-footlink", onclick: onOriginal }, "original ↗"), h("a", { class: "nis-footlink", href: "#nis-root" }, "top ↑")),
       ),
       h("div", { class: "nis-row" }, h("div", { class: "nis-rail nis-end" })),
@@ -2059,7 +2139,8 @@
    * Running
    * ------------------------------------------------------------------------ */
 
-  let root = null;
+  let host = null; // #nis-root in the page: holds the shadow root and the page's live controls
+  let root = null; // our layout, inside the shadow root
   let model = null;
   let lastRead = null;
   let signature = "";
@@ -2071,6 +2152,7 @@
   }
 
   function render(m) {
+    lightNodes = [];
     const next = h(
       "div",
       { id: "nis-root", lang: lang || null, dir: html.getAttribute("dir") || null },
@@ -2078,24 +2160,33 @@
       h("main", { class: "nis-main" }, Notices(m.notices), Hero(m), Sections(m)),
       Footer(m, showOriginal),
     );
+    if (!host) {
+      host = h("div", { id: "nis-root" });
+      const shadow = host.attachShadow({ mode: "open" });
+      shadow.append(sheetText ? h("style", {}, sheetText) : h("link", { rel: "stylesheet", href: SHEET }));
+    }
+    if (!host.isConnected || host.parentNode !== document.body) document.body.prepend(host);
+    for (const n of lightNodes) if (n.parentNode !== host) host.append(n);
     if (root) root.replaceWith(next);
-    else document.body.prepend(next);
+    else host.shadowRoot.append(next);
     root = next;
   }
 
   /** Puts adopted controls back where they came from and shows the original page. */
+  const OUR_CLASSES = ["nis-control", "nis-control-btn", "nis-control-btn2", "nis-control-search", "nis-control-choice", "nis-media"];
   function showOriginal() {
     for (const [slot, node] of slots) {
       if (slot.isConnected) {
         slot.replaceWith(node);
-        node.classList.remove("nis-control", "nis-control-btn", "nis-control-btn2");
+        node.removeAttribute("slot");
+        node.classList.remove(...OUR_CLASSES);
         if (node.__nisFormAttr) node.removeAttribute("form");
         node.__nisAdopted = false;
       }
     }
     slots = new Map();
-    root?.remove();
-    root = null;
+    host?.remove();
+    host = root = null;
     html.classList.remove("nis-composed");
     observer?.disconnect();
     const back = h("button", { type: "button", class: "nis-backbtn", onclick: () => location.reload() }, "Back to redesign");
@@ -2104,22 +2195,43 @@
   }
 
   /* Pop-ups the page opens: shown above our layout, restyled. */
-  const DIALOGISH = '[role=dialog], [role=alertdialog], [aria-modal=true], dialog[open], .modal, .popup, .lightbox, [class*="modal"], [class*="popup"], [class*="overlay"]';
-  /** Pop-ups open right now. Called while the original page is shown as itself (see update). */
+  const DIALOGISH = '[role=dialog], [role=alertdialog], [aria-modal=true], dialog[open], .modal, .popup, .lightbox, [class*="modal" i], [class*="popup" i], [class*="lightbox" i]';
+  const MODAL = "[role=dialog], [role=alertdialog], [aria-modal=true], dialog";
+  /**
+   * Pop-ups open right now: a box of real size floating (fixed) over the middle of the screen.
+   * Bars, dropdowns, side tabs, cookie and newsletter prompts aren't pop-ups. Called while the
+   * original page is shown as itself (see update).
+   */
   function openDialogs() {
     const out = [];
+    const w = vw();
+    const hgt = window.innerHeight;
     for (const el of document.querySelectorAll(DIALOGISH)) {
-      if (root?.contains(el) || el.closest("[data-nis-portal]")) continue;
-      if (BOILERPLATE.test(ident(el)) || PROMO_TEXT.test(el.textContent.slice(0, 300))) continue;
+      if (host?.contains(el) || el.closest("[data-nis-portal]")) continue;
+      if (BOILERPLATE.test(ident(el)) || PROMO_TEXT.test(el.textContent.slice(0, 600))) continue;
+      if (!shown(el)) continue;
       const r = rect(el);
-      if (!shown(el) || r.width < 40 || r.height < 20) continue;
-      // Open pop-ups float above the page.
-      let floating = false;
-      for (let p = el; p && p !== document.body; p = p.parentElement) if (["fixed", "absolute"].includes(css(p).position) || T(p) === "DIALOG") floating = true;
-      if (floating) out.push(el);
+      if (r.width < 200 || r.height < 80) continue;
+      // Over the middle of the screen, not a bar along an edge.
+      if (r.left > w / 2 || r.right < w / 2 || r.bottom < hgt * 0.25 || r.top > hgt * 0.75) continue;
+      if (r.height < 160 && r.width >= w * 0.9) continue;
+      let fixed = false;
+      for (let p = el; p && p !== document.body; p = p.parentElement) if (css(p).position === "fixed" || (T(p) === "DIALOG" && p.open)) fixed = true;
+      if (!fixed) continue;
+      out.push(el);
     }
-    return out.filter((el) => !out.some((o) => o !== el && o.contains(el)));
+    // Pop-ups the reader didn't open (promos and notices on arrival or on a timer) are left out:
+    // only one that opens just after a click, key or submit is shown.
+    const opened = out.filter((el) => !arrived.has(el) && !out.some((o) => o !== el && o.contains(el)));
+    if (performance.now() - lastAct > 4000) {
+      for (const el of opened) arrived.add(el);
+      return [];
+    }
+    return opened;
   }
+  let arrived = new Set();
+  let lastAct = -Infinity;
+  for (const type of ["click", "keydown", "submit", "pointerdown", "change"]) addEventListener(type, () => (lastAct = performance.now()), { capture: true, passive: true });
   function portals(open) {
     for (const el of open) {
       if (el.closest("[data-nis-portal]")) continue;
@@ -2137,13 +2249,13 @@
       } catch {}
     }
   }
-  const PROMO_TEXT = /\b(we use cookies|accept all cookies|subscribe to our newsletter)\b/i;
+  const PROMO_TEXT = /\b(cookies?|consent|privacy (settings|preferences)|subscribe to our newsletter|sign up for our newsletter)\b/i;
 
   let observer = null;
   let timer = 0;
   // Pages that set <html class> wholesale drop ours: put them back.
   const classKeeper = new MutationObserver(() => {
-    if (!root) return;
+    if (!host) return;
     if (!html.classList.contains("nis-composed")) html.classList.add("nis-composed");
     if (!html.classList.contains("nis-on")) html.classList.add("nis-on");
   });
@@ -2153,7 +2265,7 @@
     window.addEventListener(
       type,
       (e) => {
-        if (root && root.contains(e.target)) e.stopImmediatePropagation();
+        if (host && host.contains(e.target)) e.stopImmediatePropagation();
       },
       { capture: true, passive: true },
     );
@@ -2162,19 +2274,25 @@
   function watch() {
     classKeeper.observe(html, { attributes: true, attributeFilter: ["class"] });
     observer = new MutationObserver((records) => {
-      if (records.every((r) => root?.contains(r.target) || r.target === root || r.target.closest?.("[data-nis-portal]"))) return;
+      // Frameworks that take over <body> (hydration, client routing) drop nodes they didn't render: ours goes back.
+      if (host && host.parentNode !== document.body && document.body) {
+        document.body.prepend(host);
+        html.classList.add("nis-on", "nis-composed");
+      }
+      if (records.every((r) => host?.contains(r.target) || r.target.closest?.("[data-nis-portal], head") || T(r.target) === "HEAD" || (r.target === html && r.type === "attributes"))) return;
       clearTimeout(timer);
       timer = setTimeout(update, 400);
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true, attributeFilter: ["class", "style", "hidden", "open", "aria-hidden", "aria-expanded"] });
+    observer.observe(html, { childList: true, subtree: true, attributes: true, characterData: true, attributeFilter: ["class", "style", "hidden", "open", "aria-hidden", "aria-expanded"] });
   }
 
   function update() {
     observer.disconnect();
     try {
       // Read the original as laid out on its own: our layout out of the way, the page shown.
-      const busy = root && root.contains(document.activeElement) && document.activeElement !== root && document.activeElement !== document.body;
-      if (root) root.style.display = "none";
+      // Focus inside the shadow root shows as the host; inside a moved control, as the control.
+      const busy = !!host && host.contains(document.activeElement) && (document.activeElement !== host || !!host.shadowRoot.activeElement?.matches("input, textarea, select, [contenteditable]"));
+      if (host) host.style.display = "none";
       html.classList.remove("nis-composed");
       html.classList.remove("nis-on");
       const y = scrollY;
@@ -2188,7 +2306,7 @@
         });
       } finally {
         html.classList.add("nis-on", "nis-composed");
-        if (root) root.style.display = "";
+        if (host) host.style.display = "";
         if (scrollY !== y) scrollTo(0, y);
       }
       portals(open);
@@ -2203,7 +2321,7 @@
       console.debug("Redesign couldn't update the layout:", err);
       html.classList.add("nis-composed");
     } finally {
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true, attributeFilter: ["class", "style", "hidden", "open", "aria-hidden", "aria-expanded"] });
+      observer.observe(html, { childList: true, subtree: true, attributes: true, characterData: true, attributeFilter: ["class", "style", "hidden", "open", "aria-hidden", "aria-expanded"] });
     }
   }
 
@@ -2228,18 +2346,17 @@
         m = readPage();
         covered = modelText(m);
         total = m.mainParts.reduce((n, p) => n + (excluded.has(p) ? 0 : readableText(p).replace(/\s+/g, "").length), 0);
-        open = openDialogs();
+        arrived = new Set(openDialogs());
+        open = [];
         return false;
       });
       html.classList.add("nis-on");
       if (app) return decline("app");
       lastRead = m;
       html.setAttribute("data-nis-coverage", total ? (covered / total).toFixed(2) : "0");
-      // Too big to read in full: restyle rather than show part of it.
-      if (budget < 0) return decline("too large");
-      if (!m.sections.length && !m.notices.length && !m.hero.lead.length) return decline("empty");
-      // Restyling keeps a site's own clutter, so a page is rebuilt whenever most of it can be read.
-      if (total > 400 && covered < total * 0.4) return decline("coverage");
+      // Every page is rebuilt from the same blocks, whatever it sends: restyling keeps a
+      // site's own layout, so it's only for tools (above). A page still rendering (single
+      // page apps) is read again as its content arrives.
       model = m;
       signature = signatureOf(m);
       render(m);
@@ -2253,17 +2370,17 @@
       console.debug("Redesign couldn't compose this page; restyling it instead:", err);
       html.setAttribute("data-nis-declined", `error: ${err?.message || err}`.slice(0, 200));
       html.classList.add("nis-on");
-      if (root) {
+      if (host) {
         showOriginalQuiet();
       }
       return false;
     }
   }
   function showOriginalQuiet() {
-    for (const [slot, node] of slots) if (slot.isConnected) slot.replaceWith(node);
+    for (const [slot, node] of slots) if (slot.isConnected) slot.replaceWith(node), node.removeAttribute("slot"), node.classList.remove(...OUR_CLASSES);
     slots = new Map();
-    root?.remove();
-    root = null;
+    host?.remove();
+    host = root = null;
     html.classList.remove("nis-composed");
   }
 
@@ -2283,4 +2400,6 @@
       footer: { groups: m.footer.groups.map((g) => `${g.title}(${g.links.length})`), text: m.footer.text.map(plain), logos: m.footer.logos.length },
     };
   window.__nisCompose = { run, summary };
+  // Inspection from the page or a test runner: dispatch "nis-summary" and read data-nis-summary.
+  window.addEventListener("nis-summary", () => html.setAttribute("data-nis-summary", JSON.stringify(summary() || null)));
 })();
