@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { Examples, type Example } from "@/components/examples";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
 export const metadata: Metadata = {
@@ -7,8 +7,8 @@ export const metadata: Metadata = {
 };
 
 // Before and after screenshots of real sites, in public/examples. An entry
-// without screenshots shows a hatched placeholder.
-const examples: { site: string; before?: string; after?: string }[] = [
+// without screenshots shows a placeholder.
+const examples: Example[] = [
   { site: "example-1" },
   { site: "example-2" },
 ];
@@ -108,34 +108,11 @@ export default function Home() {
       </Section>
 
       <Section id="examples" n="02" title="Examples">
-        {examples.map(({ site, before, after }, i) => (
-          <Row key={site} className="grid gap-2 p-2 sm:grid-cols-2 sm:p-4">
-            {(
-              [
-                ["Before", before],
-                ["After", after],
-              ] as const
-            ).map(([label, src]) => (
-              <figure
-                key={label}
-                className="rise overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5"
-                style={{ "--i": i + 1 } as React.CSSProperties}
-              >
-                <figcaption className="flex items-center justify-between border-b border-gray-950/5 px-4 py-2.5 font-mono text-xs/5">
-                  <span className="text-gray-950">{site}</span>
-                  <span className="text-gray-950/45">{label.toLowerCase()}</span>
-                </figcaption>
-                <div className="relative aspect-[16/10]">
-                  {src ? (
-                    <Image src={src} alt={`${site}, ${label.toLowerCase()}`} fill sizes="(min-width: 640px) 360px, 100vw" className="object-cover object-top" />
-                  ) : (
-                    <div className="hatch absolute inset-0" />
-                  )}
-                </div>
-              </figure>
-            ))}
-          </Row>
-        ))}
+        <Row className="p-2 sm:p-4">
+          <div className="rise [--i:1]">
+            <Examples items={examples} />
+          </div>
+        </Row>
       </Section>
 
       <Section n="03" title="The rules">
