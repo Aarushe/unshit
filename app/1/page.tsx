@@ -36,7 +36,7 @@ const questions = [
 function Section({ id, n, title, children }: { id?: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <>
-      <Row id={id} className="flex items-baseline justify-between gap-4 px-4 py-3 sm:px-6">
+      <Row id={id} className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <h2 className="font-serif text-[1.75rem]/[1.2] tracking-[-0.03em]">{title}</h2>
         <span className="font-mono text-xs text-gray-950/35">{n}</span>
       </Row>
