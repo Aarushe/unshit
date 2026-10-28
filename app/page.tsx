@@ -107,7 +107,7 @@ export default function Home() {
         </Prose>
       </Section>
 
-      <Section id="examples" n="02" title="Examples">
+      <Section id="examples" n="02" title="Test here">
         <Row className="p-2 sm:p-4">
           <div className="rise [--i:1]">
             <Examples items={examples} />
