@@ -150,7 +150,7 @@ export function Install({
           See examples
         </a>
       </span>
-      <span className="enter font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Brave · Arc · Dia · Firefox · Safari</span>
+      <span className="enter font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Safari · Firefox · Brave · Arc · Dia</span>
     </Row>
   );
 }
