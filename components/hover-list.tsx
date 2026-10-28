@@ -42,7 +42,7 @@ export function HoverList({ className = "", children }: { className?: string; ch
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute top-0 left-0 rounded-lg bg-[#1111110d] motion-reduce:transition-none"
+        className="pointer-events-none absolute top-0 left-0 rounded-lg bg-gray-950/[0.025] motion-reduce:transition-none"
         style={{
           width: box?.w ?? 0,
           height: box?.h ?? 0,

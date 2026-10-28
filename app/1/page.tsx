@@ -95,7 +95,7 @@ export default function V1() {
               >
                 <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
                   <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                  <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-150 ease-out group-hover/item:text-gray-950">
+                  <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-150 ease-out group-hover/item:text-gray-950/75">
                     {body}
                   </p>
                 </div>
