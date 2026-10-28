@@ -2034,7 +2034,8 @@
     if (b.k === "coll" && b.kind === "links") return Rail("nis-pad2", Links(b, plain(s.title || [])));
     if (b.k === "contact") return Rail("nis-pad2", Contact(b));
     if (b.k === "table") return Rail("nis-pad2", Table(b));
-    if (b.k === "form") return Rail("nis-pad2", Form(b));
+    // A full form leaves the rail beside it empty: hatch it, like the design's stages.
+    if (b.k === "form") return Rail(inlineForm(b) ? "nis-pad2" : "nis-pad2 nis-hatch", Form(b));
     if (b.k === "cta") return Rail("nis-pad nis-actions-row", Button(b.c.find((x) => x.link)?.link, plain(b.c), b.primary));
     if (b.k === "details") return Rail("nis-pad", Details([b]));
     return null;

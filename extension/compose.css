@@ -1073,6 +1073,10 @@ html.nis-composed body {
 #nis-root .nis-formframe {
   max-width: 704px;
 }
+/* On the hatch the frame stays solid, so the lines don't show through its edge. */
+#nis-root .nis-hatch > .nis-formframe {
+  background: linear-gradient(var(--tint), var(--tint)), #fff;
+}
 #nis-root .nis-form {
   display: flex;
   flex-direction: column;
