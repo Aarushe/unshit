@@ -11,11 +11,14 @@ export function HoverList({
   className = "",
   inset = 4,
   rounded = true,
+  duration = 0.22,
   children,
 }: {
   className?: string;
   inset?: number;
   rounded?: boolean;
+  // Seconds to glide between items; longer for far-apart items so the move reads as smooth.
+  duration?: number;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -51,14 +54,14 @@ export function HoverList({
     >
       <div
         aria-hidden
-        className={`pointer-events-none absolute top-0 left-0 bg-gray-950/[0.025] motion-reduce:transition-none ${rounded ? "rounded-lg" : ""}`}
+        className={`pointer-events-none absolute top-0 left-0 bg-gray-950/[0.015] motion-reduce:transition-none ${rounded ? "rounded-lg" : ""}`}
         style={{
           width: box?.w ?? 0,
           height: box?.h ?? 0,
           translate: box ? `${box.x}px ${box.y}px` : undefined,
           opacity: shown ? 1 : 0,
           transition: glide
-            ? "translate 0.22s var(--ease-smooth), width 0.22s var(--ease-smooth), height 0.22s var(--ease-smooth), opacity 0.15s ease-out"
+            ? `translate ${duration}s var(--ease-smooth), width ${duration}s var(--ease-smooth), height ${duration}s var(--ease-smooth), opacity 0.15s ease-out`
             : "opacity 0.15s ease-out",
         }}
       />
