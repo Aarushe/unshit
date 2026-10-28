@@ -1497,3 +1497,29 @@ html.nis-composed body {
   overflow-wrap: normal;
   word-break: normal;
 }
+
+/* Tabs over a form: which kind of request it is. */
+#nis-root .nis-formtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+#nis-root .nis-formtab {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: 500 13px/20px var(--sans);
+  color: var(--ink-55);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+#nis-root .nis-formtab:hover {
+  color: var(--ink);
+}
+#nis-root .nis-formtab[aria-selected="true"] {
+  background: rgb(3 7 18 / 0.05);
+  color: var(--ink);
+}

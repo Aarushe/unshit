@@ -122,7 +122,14 @@
     if (el.getClientRects().length === 0) {
       return css(el).display === "contents";
     }
-    if (el.checkVisibility && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+    if (el.checkVisibility && !el.checkVisibility({ checkVisibilityCSS: true })) return false;
+    // Faded out: hidden, unless a carousel or a scroll-reveal animation faded it (they fade
+    // their content while they rebuild or until it scrolls in; it is still the page's content).
+    if (el.checkVisibility && !el.checkVisibility({ checkOpacity: true })) {
+      let faded = el;
+      while (faded && css(faded).opacity !== "0") faded = faded.parentElement;
+      if (!faded || !(inCarousel(faded) || REVEAL.test(ident(faded)) || faded.hasAttribute("data-aos"))) return false;
+    }
     const r = rect(el);
     if (r.width <= 2 || r.height <= 2) {
       const cs = css(el);
@@ -132,6 +139,8 @@
   }
 
   const ident = (el) => `${el.getAttribute("class") || ""} ${el.id || ""}`;
+  // Scroll-reveal animations (AOS, WOW, Animate.css and the like) fade content until it's in view.
+  const REVEAL = /(^|[\s_-])(aos-|wow|animate__|animated|reveal|fade-?in|fade-?up|scroll-?anim)/i;
 
   /** Things that float over the page (chat bubbles, promos, cookie bars, feedback tabs) are left out. */
   const widget = (el) => remember("widget", el, widgetNow);
@@ -425,7 +434,9 @@
     if (Math.max(...tags.values()) < items.length * 0.8) return false;
     // Items hold one thing: a part of the page with several headings, or taller than a
     // screenful, is a section of its own, however alike its neighbours look.
-    if (items.some((k) => qsa(k, "h1, h2, h3, h4, [role=heading]").filter(shown).length > 1 || rect(k).height > Math.max(window.innerHeight * 1.5, 1100))) return false;
+    // Carousel slides are items whatever they hold (a quote, a name and a place are three headings on some sites).
+    const slides = items.every(inCarousel);
+    if (items.some((k) => (!slides && qsa(k, "h1, h2, h3, h4, [role=heading]").filter(shown).length > 1) || rect(k).height > Math.max(window.innerHeight * 1.5, 1100))) return false;
     const shapes = items.map(shape);
     if (shapes.some((s) => s.text === 0 && !s.big && !s.icon)) return false;
     if (shapes.some((s) => s.text > 260)) return false;
@@ -676,6 +687,15 @@
       title = body.shift();
       body.unshift(figure);
     }
+    // A quote with who said it: the short line (a name) is the title, the quote its body.
+    // A quote reads as sentences and links nowhere; a name is a few words, unlinked.
+    const short = body.findIndex((c) => words(plain(c)) <= 5 && !c.some((x) => x.link));
+    const quoted = title && !title.some((x) => x.link) && words(plain(title)) > 8 && /[.!?…"”]$/.test(plain(title));
+    if (quoted && short >= 0) {
+      const quote = title;
+      title = body.splice(short, 1)[0];
+      body.unshift(quote);
+    }
     // "Know more" names no item: it's the item's action, and the next line is its title.
     if (title && MORE.test(plain(title)) && body.length) {
       actions.push({ k: "cta", c: title, primary: false });
@@ -729,7 +749,18 @@
     const linkOnly = (i) => !i.body.length && i.title.length && i.title.every((s) => s.link);
     if (all((i) => i.n !== null) && all(linkOnly)) return { k: "coll", kind: "links", ranked: true, items: items.map((i) => ({ title: `${i.n}. ${plain(i.title)}`, link: i.link || i.title[0].link, meta: "" })) };
     if (all((i) => i.n !== null)) kind = "steps";
-    else if (all((i) => !i.title.length && !i.body.length && (i.img || i.icon))) {
+    else {
+      // A small figure (71 client governments) read as a step number where the others are larger figures.
+      for (const i of items) {
+        if (i.n === null) continue;
+        i.body.unshift([{ t: i.n }]);
+        i.text = `${i.n} ${i.text}`;
+        i.n = null;
+      }
+    }
+    if (kind === "steps") {
+      // Steps stay as read.
+    } else if (all((i) => !i.title.length && !i.body.length && (i.img || i.icon))) {
       // A logo strip names its logos (alt text or a link); unnamed little pictures are decoration.
       const named = items.filter((i) => {
         const pic = i.img || i.icon;
@@ -847,7 +878,9 @@
     }
     if (!fields.length && !actions.length) return null;
     // Captchas and other pictures between fields go with the field after them.
-    const pics = qsa(el, "img").filter((i) => shown(i) && rect(i).height >= 24 && rect(i).width >= 60);
+    const placed = fields.filter((f) => f.node).map((f) => rect(f.node));
+    const span = placed.length ? { top: Math.min(...placed.map((r) => r.top)) - 120, bottom: Math.max(...placed.map((r) => r.bottom)) + 120 } : null;
+    const pics = qsa(el, "img").filter((i) => shown(i) && rect(i).height >= 24 && rect(i).width >= 60 && !i.closest("a[href]") && (!span || (rect(i).top >= span.top && rect(i).bottom <= span.bottom)));
     for (const pic of pics) {
       if (pic.__nisMedia) {
         const owner = fields.find((f) => f.node === pic.__nisMedia.owner);
@@ -864,10 +897,34 @@
         pic.__nisMedia = { owner: target.node, nodes: target.media };
       }
     }
-    const title = el.querySelector("legend, h1, h2, h3, h4")?.textContent || "";
+    const tabs = formTabs(el, fields);
+    const heading = [...el.querySelectorAll("legend, h1, h2, h3, h4")].find(shown);
+    const title = tabs.find((t) => t.active)?.label || heading?.textContent || "";
     const note = [];
     for (const p of el.querySelectorAll("p, small, .note, .help")) if (!p.querySelector(CONTROL) && shown(p) && textIn(p)) note.push(fix(textIn(p)));
-    return { k: "form", form, el, fields, actions, title: fix(title), note: note.slice(0, 4) };
+    return { k: "form", form, el, fields, actions, tabs, title: fix(title), note: note.slice(0, 4) };
+  }
+
+  /**
+   * Tabs that switch what a form is for (Visas / Passports / Attestation): a row of
+   * short labels the pointer can click, above the first field. Clicking ours clicks theirs.
+   */
+  function formTabs(el, fields) {
+    const first = fields.find((f) => f.node)?.node || fields[0]?.options?.[0]?.node;
+    if (!first) return [];
+    const top = rect(first).top;
+    const candidates = qsa(el, '[role=tab], li, button, a, div, span').filter(
+      (c) => shown(c) && !c.querySelector(CONTROL) && leaf(c) && rect(c).bottom <= top && css(c).cursor === "pointer" && words(textIn(c)) >= 1 && words(textIn(c)) <= 5,
+    );
+    // Only the outermost clickable label of each tab.
+    const own = candidates.filter((c) => !candidates.some((o) => o !== c && o.contains(c) && css(o).cursor === "pointer"));
+    const row = own.filter((c) => Math.abs(rect(c).top - rect(own[0]).top) < 8);
+    if (row.length < 2 || row.length > 8) return [];
+    return row.map((c) => ({
+      node: c,
+      label: fix(textIn(c)),
+      active: c.getAttribute("aria-selected") === "true" || /(^|\s)(active|selected|current)(\s|$)/.test(c.getAttribute("class") || ""),
+    }));
   }
 
   function groupLabel(radio) {
@@ -2020,6 +2077,13 @@
       Panel(
         "nis-clip",
         FileBar(`${slug(block.title || "form")}.form`, `${block.fields.length} field${block.fields.length === 1 ? "" : "s"}`),
+        block.tabs?.length
+          ? h(
+              "div",
+              { class: "nis-formtabs", role: "tablist" },
+              block.tabs.map((t) => h("button", { class: "nis-formtab", type: "button", role: "tab", "aria-selected": t.active ? "true" : "false", onclick: () => t.node.isConnected && t.node.click() }, t.label)),
+            )
+          : null,
         h("div", { class: "nis-form" }, rows, actions.length ? h("div", { class: "nis-formacts" }, actions) : null),
         block.note.length ? h("div", { class: "nis-formnote" }, block.note.map((n) => h("p", {}, n))) : null,
       ),
