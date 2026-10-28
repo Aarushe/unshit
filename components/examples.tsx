@@ -135,11 +135,12 @@ export function Examples({ items }: { items: Example[] }) {
           >
             {/* Both pages share one grid cell, so the taller one sets the scroll height. */}
             <div className="grid">
-              <div className="[grid-area:1/1]">
+              {/* Hatching past the end of the shorter page shows where it stops. */}
+              <div className="hatch [grid-area:1/1]">
                 <Layer src={example.before} label="before" site={example.site} />
               </div>
               <div
-                className={`bg-white [grid-area:1/1] transition-[clip-path] ${glide}`}
+                className={`hatch bg-white [grid-area:1/1] transition-[clip-path] ${glide}`}
                 style={{ clipPath: `inset(0 0 0 ${at}%)` }}
               >
                 <Layer src={example.after} label="after" site={example.site} />

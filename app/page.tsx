@@ -9,7 +9,11 @@ export const metadata: Metadata = {
 // Before and after screenshots of real sites, in public/examples. An entry
 // without screenshots shows a placeholder.
 const examples: Example[] = [
-  { site: "example-1" },
+  {
+    site: "indianvisaonline.gov.in",
+    before: "/examples/indian-evisa-before.png",
+    after: "/examples/indian-evisa-after.png",
+  },
   { site: "example-2" },
 ];
 
