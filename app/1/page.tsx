@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HoverList } from "@/components/hover-list";
 import { Hero, Install, Page, Row, repo } from "@/components/landing";
 
 export const metadata: Metadata = {
@@ -38,7 +39,7 @@ function Section({ id, n, title, children }: { id?: string; n: string; title: st
     <>
       <Row id={id} className="group/section flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <h2 className="rise font-serif text-[1.75rem]/[1.2] tracking-[-0.03em]">{title}</h2>
-        <span className="font-mono text-xs text-gray-950/35 transition-colors duration-300 group-hover/section:text-gray-950/70">{n}</span>
+        <span className="font-mono text-xs text-gray-950/35 transition-colors duration-150 group-hover/section:text-gray-950/70">{n}</span>
       </Row>
       {children}
       <Row className="h-10 sm:h-14" />
@@ -84,18 +85,23 @@ export default function V1() {
       </Section>
 
       <Section n="02" title="The rules">
-        <Row className="grid sm:grid-cols-2">
-          {rules.map(([title, body], i) => (
-            <div
-              key={title}
-              className={`border-gray-950/5 px-4 py-4 transition-colors duration-300 hover:bg-gray-950/[0.015] sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} sm:odd:border-r`}
-            >
-              <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
-                <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
-                <p className="mt-1 text-sm/6 text-pretty text-gray-950/60">{body}</p>
+        <Row>
+          <HoverList className="grid sm:grid-cols-2">
+            {rules.map(([title, body], i) => (
+              <div
+                key={title}
+                data-hover-item
+                className={`group/item relative border-gray-950/5 px-4 py-4 sm:px-6 ${i > 0 ? "border-t" : ""} ${i === 1 ? "sm:border-t-0" : ""} sm:odd:border-r`}
+              >
+                <div className="rise" style={{ "--i": i + 1 } as React.CSSProperties}>
+                  <h3 className="text-[0.9375rem]/6 font-medium text-gray-950">{title}</h3>
+                  <p className="mt-1 text-sm/6 text-pretty text-gray-950/60 transition-colors duration-150 ease-out group-hover/item:text-gray-950">
+                    {body}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </HoverList>
         </Row>
       </Section>
 
@@ -163,7 +169,7 @@ export default function V1() {
                 style={{ "--i": i + 1 } as React.CSSProperties}
               >
                 {q}
-                <span className="font-mono text-xs text-gray-950/35 transition-[rotate,color] duration-300 ease-(--ease-out) group-open:rotate-45 group-hover:text-gray-950/70">+</span>
+                <span className="font-mono text-xs text-gray-950/35 transition-[rotate,color] duration-150 ease-(--ease-out) group-open:rotate-45 group-hover:text-gray-950/70">+</span>
               </summary>
               <p className="px-4 pb-4 text-sm/6 text-pretty text-gray-950/60 sm:px-6">{a}</p>
             </details>

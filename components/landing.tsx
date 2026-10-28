@@ -24,7 +24,7 @@ export function Page({ children }: { children: React.ReactNode }) {
           </Link>
           <p className="text-sm/6 text-gray-950/55">
             Made by{" "}
-            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="ink text-gray-950">
+            <a href="https://x.com/aarushe_reddy" target="_blank" rel="noreferrer" className="text-gray-950 hover:underline">
               @aarushe_reddy
             </a>
           </p>
@@ -82,12 +82,12 @@ export function Hero() {
     <>
       <Row className="h-16 sm:h-24" />
       <Row className="px-4 py-2 sm:px-6">
-        <p className="rise font-mono text-xs/7 text-gray-950/35">a browser extension · one click · any site</p>
+        <p className="enter font-mono text-xs/7 text-gray-950/35">a browser extension · one click · any site</p>
       </Row>
       <Row className="px-4 py-3 sm:px-6">
         <h1 className="font-serif text-[2.5rem]/[1.12] tracking-[-0.045em] sm:text-[3.5rem]/[1.08]">
           {headline.split(" ").map((word, i) => (
-            <span key={i} className="rise inline-block" style={{ "--i": i + 1 } as React.CSSProperties}>
+            <span key={i} className="enter inline-block" style={{ "--i": i + 1 } as React.CSSProperties}>
               {word}
               {i < headline.split(" ").length - 1 && "\u00a0"}
             </span>
@@ -95,7 +95,7 @@ export function Hero() {
         </h1>
       </Row>
       <Row className="px-4 py-3 sm:px-6">
-        <p className="rise text-lg/8 tracking-[0.1px] [--i:11] text-pretty text-gray-950/60">
+        <p className="enter text-lg/8 tracking-[0.1px] [--i:11] text-pretty text-gray-950/60">
           One click rebuilds the site you&rsquo;re on in a clean, consistent layout. It keeps
           the page&rsquo;s own text, links, images, tables and forms, and leaves the clutter
           behind. Nothing added, nothing rewritten.
@@ -108,10 +108,10 @@ export function Hero() {
 export function Install({ href = `${repo}/tree/main/extension#install` }: { href?: string }) {
   return (
     <Row className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-6">
-      <span className="rise [--i:12]">
+      <span className="enter [--i:12]">
         <a
           href={href}
-          className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
+          className="group inline-flex items-center gap-1.5 rounded-full bg-gray-950 py-1.5 pr-3 pl-4 text-sm/6 font-semibold text-white transition-transform duration-100 active:scale-[0.97]"
         >
           Install the extension
           {/* A chevron that slides forward while its tail draws in, becoming an arrow. */}
@@ -122,7 +122,7 @@ export function Install({ href = `${repo}/tree/main/extension#install` }: { href
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-transform duration-200 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
+              className="transition-transform duration-150 ease-out group-hover:translate-x-[2.5px] group-focus-visible:translate-x-[2.5px] motion-reduce:transition-none"
             />
             <path
               d="M3 8L10 8"
@@ -130,12 +130,12 @@ export function Install({ href = `${repo}/tree/main/extension#install` }: { href
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="origin-right scale-x-0 transition-transform duration-200 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
+              className="origin-right scale-x-0 transition-transform duration-150 ease-out [transform-box:fill-box] group-hover:translate-x-[1.5px] group-hover:scale-x-100 group-focus-visible:translate-x-[1.5px] group-focus-visible:scale-x-100 motion-reduce:transition-none"
             />
           </svg>
         </a>
       </span>
-      <span className="rise font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
+      <span className="enter font-mono text-xs text-gray-950/45 [--i:13]">Chrome · Edge · Brave · Arc · Firefox · Safari</span>
     </Row>
   );
 }

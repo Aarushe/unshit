@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-// Reveals each `.rise` element the first time a fifth of it is on screen, and
+// Reveals each `.rise` element as soon as it is 40px into the screen, and
 // hides each edge blur while that end of the page is in view.
 export function Motion() {
   useEffect(() => {
@@ -15,7 +15,7 @@ export function Motion() {
           reveal.unobserve(e.target);
         }
       },
-      { threshold: 0.2 },
+      { rootMargin: "0px 0px -40px 0px" },
     );
     document.querySelectorAll(".rise").forEach((el) => reveal.observe(el));
 

@@ -58,25 +58,44 @@ html {
 :root {
   interpolate-size: allow-keywords;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /*
- * Content arrives the way it does on ashkashyap.me: each piece rises 20px out
- * of a 10px blur on a spring (stiffness 150, damping 20, sampled below), 50ms
- * after the one before it, the first time it scrolls into view. Hidden only
+ * Content arrives the way it does on ashkashyap.me: each piece rises 12px out
+ * of a 6px blur on a quickened spring (stiffness 150, damping 20, sampled
+ * below), 30ms after the one before it, the first time it scrolls into view. Hidden only
  * once scripts run, so the page never stays blank without them.
  */
 @utility rise {
   --spring: linear(0, 0.0427, 0.1393, 0.2612, 0.3894, 0.5117, 0.6215, 0.7156, 0.7932, 0.8553, 0.9033, 0.9394, 0.9656,
     0.9839, 0.9961, 1.0037, 1.008, 1.01, 1.0105, 1.01, 1.0089, 1.0076, 1.0063, 1.005, 1.0039, 1.0029, 1.0021, 1.0015,
     1.001, 1.0006, 1.0003, 1.0002, 1, 1);
-  transition: opacity 0.9s var(--spring), translate 0.9s var(--spring), filter 0.9s var(--spring);
-  transition-delay: calc(var(--i, 0) * 50ms);
+  transition: opacity 0.5s var(--spring), translate 0.5s var(--spring), filter 0.5s var(--spring);
+  transition-delay: calc(var(--i, 0) * 30ms);
   .js &:not([data-shown]) {
     opacity: 0;
-    translate: 0 20px;
-    filter: blur(10px);
+    translate: 0 12px;
+    filter: blur(6px);
   }
+}
+
+/* The same rise for what is on screen at load, run by CSS alone so it starts
+ * with the first paint instead of waiting for scripts. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+    filter: blur(6px);
+  }
+}
+@utility enter {
+  animation: enter 0.5s
+    linear(0, 0.0427, 0.1393, 0.2612, 0.3894, 0.5117, 0.6215, 0.7156, 0.7932, 0.8553, 0.9033, 0.9394, 0.9656, 0.9839,
+      0.9961, 1.0037, 1.008, 1.01, 1.0105, 1.01, 1.0089, 1.0076, 1.0063, 1.005, 1.0039, 1.0029, 1.0021, 1.0015, 1.001,
+      1.0006, 1.0003, 1.0002, 1, 1)
+    both;
+  animation-delay: calc(var(--i, 0) * 30ms);
 }
 
 /* A faint rule under links that inks in from the left on hover. */
@@ -86,7 +105,7 @@ html {
   background-size: 0% 1px, 100% 1px;
   background-position: 0 100%;
   background-repeat: no-repeat;
-  transition: background-size 0.35s var(--ease-out);
+  transition: background-size 0.2s var(--ease-out);
   &:hover,
   &:focus-visible {
     background-size: 100% 1px, 100% 1px;
@@ -96,7 +115,7 @@ html {
 /* Keycaps that sit up off the page and press down under the pointer. */
 @utility keycap {
   box-shadow: inset 0 -1.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
-  transition: translate 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+  transition: translate 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
   &:hover {
     translate: 0 1px;
     box-shadow: inset 0 -0.5px 0 color-mix(in oklab, var(--color-gray-950) 12%, transparent);
@@ -108,8 +127,8 @@ details::details-content {
   block-size: 0;
   overflow: clip;
   opacity: 0;
-  transition: block-size 0.35s var(--ease-out), opacity 0.35s var(--ease-out),
-    content-visibility 0.35s allow-discrete;
+  transition: block-size 0.2s var(--ease-out), opacity 0.2s var(--ease-out),
+    content-visibility 0.2s allow-discrete;
 }
 details[open]::details-content {
   block-size: auto;
@@ -123,11 +142,11 @@ details[open]::details-content {
   }
 }
 :target > div {
-  animation: arrive 1.6s var(--ease-out) 0.3s both;
+  animation: arrive 1s var(--ease-out) 0.15s both;
 }
 
 .edge-blur {
-  transition: opacity 0.4s var(--ease-out);
+  transition: opacity 0.2s var(--ease-out);
   &[data-hidden] {
     opacity: 0;
   }
