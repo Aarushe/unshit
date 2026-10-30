@@ -146,7 +146,7 @@ export default function Home() {
                 Click Load unpacked and choose the <code className="font-mono text-sm text-gray-950">extension</code>{" "}
                 folder inside it.
               </>,
-              "Pin Redesign from the puzzle-piece menu.",
+              "Pin Unshit from the puzzle-piece menu.",
             ]}
           />
           <p className="text-sm/6 text-gray-950/55">

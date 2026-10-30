@@ -1,6 +1,6 @@
-# New Internet Society — Redesign (browser extension)
+# Unshit (browser extension)
 
-One click rebuilds the site you're on in the New Internet Society design.
+One click rebuilds the page you're on in one plain layout.
 
 The page is read for what it is (who the site is, where you can go, what it
 wants you to know, what you came to do, its sections of content and its small
@@ -43,7 +43,7 @@ page's own elements, and pop-ups it opens are shown above the redesign.
 1. Open `chrome://extensions` (Edge: `edge://extensions`, Opera: `opera://extensions`).
 2. Turn on **Developer mode**.
 3. Click **Load unpacked** and choose this `extension` folder.
-4. Pin it: click the puzzle-piece icon in the toolbar and pin **Redesign**.
+4. Pin it: click the puzzle-piece icon in the toolbar and pin **Unshit**.
 
 **Firefox** (128+)
 
@@ -58,7 +58,7 @@ sign it with `web-ext sign` (or through addons.mozilla.org).
 **Safari** (17+, macOS)
 
 ```bash
-xcrun safari-web-extension-converter extension --app-name "Redesign" --macos-only
+xcrun safari-web-extension-converter extension --app-name "Unshit" --macos-only
 ```
 
 Build and run the generated Xcode project once, then turn the extension on in

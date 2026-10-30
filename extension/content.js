@@ -1,4 +1,4 @@
-// Restyles the live page in the New Internet Society design.
+// Restyles the live page in the Unshit design.
 //
 // The page's own HTML and scripts keep running untouched — forms submit,
 // menus open, pop-ups pop — only their presentation changes. Each element is
@@ -810,7 +810,7 @@
         visit(node, pc, el, stack);
       } catch (err) {
         // One odd element never stops the rest of the page.
-        console.debug("Redesign skipped an element:", err);
+        console.debug("Unshit skipped an element:", err);
       }
     }
     return true;
@@ -1099,7 +1099,7 @@
       frames();
       rails();
     } catch (err) {
-      console.debug("Redesign skipped the layout pass:", err);
+      console.debug("Unshit skipped the layout pass:", err);
     } finally {
       reconnect();
     }
@@ -1302,7 +1302,7 @@
         try {
           composed = window.__nisCompose.run(api);
         } catch (err) {
-          console.debug("Redesign couldn't compose this page:", err);
+          console.debug("Unshit couldn't compose this page:", err);
         }
         html.classList.remove("nis-wait");
         if (!composed) restyle();

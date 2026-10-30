@@ -1,5 +1,4 @@
-// Rebuilds the page from a small set of building blocks, in the New Internet
-// Society design.
+// Rebuilds the page from a small set of building blocks, in the Unshit design.
 //
 // Every website is made of the same parts once its visuals are stripped away:
 // who it is (identity), where you can go (navigation), what it wants you to
@@ -2383,7 +2382,7 @@
         render(m);
       }
     } catch (err) {
-      console.debug("Redesign couldn't update the layout:", err);
+      console.debug("Unshit couldn't update the layout:", err);
       html.classList.add("nis-composed");
     } finally {
       observer.observe(html, { childList: true, subtree: true, attributes: true, characterData: true, attributeFilter: ["class", "style", "hidden", "open", "aria-hidden", "aria-expanded"] });
@@ -2432,7 +2431,7 @@
       if (document.readyState !== "complete") window.addEventListener("load", () => setTimeout(update, 60), { once: true });
       return true;
     } catch (err) {
-      console.debug("Redesign couldn't compose this page; restyling it instead:", err);
+      console.debug("Unshit couldn't compose this page; restyling it instead:", err);
       html.setAttribute("data-nis-declined", `error: ${err?.message || err}`.slice(0, 200));
       html.classList.add("nis-on");
       if (host) {

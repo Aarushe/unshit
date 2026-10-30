@@ -1,5 +1,5 @@
 /*
- * New Internet Society — page redesign.
+ * Unshit — page redesign.
  * Everything is scoped to html.nis-on:not(#nis-a):not(#nis-b). Roles come from content.js (data-nis);
  * colour and surface rules apply only once an element has been read and tagged.
  */

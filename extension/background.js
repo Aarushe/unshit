@@ -66,7 +66,7 @@ async function badge(tabId, url) {
     await chrome.action.setBadgeText({ tabId, text: on ? "on" : "" });
     await chrome.action.setTitle({
       tabId,
-      title: !host ? "Can't redesign this page" : on ? "Turn off redesign for this site" : "Redesign this site",
+      title: !host ? "Can't unshit this page" : on ? "Turn off Unshit for this site" : "Unshit this site",
     });
   } catch {
     // The tab closed in the meantime.
@@ -89,7 +89,7 @@ async function apply(tabId) {
     await chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: CSS });
     await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: JS });
   } catch (err) {
-    console.warn("Redesign could not be applied to this tab:", err);
+    console.warn("Unshit could not be applied to this tab:", err);
   }
 }
 
@@ -136,7 +136,7 @@ function onClicked(tab) {
       granted = Promise.resolve(true);
     }
   }
-  queue = queue.then(() => toggle(tab, granted)).catch((err) => console.warn("Redesign toggle failed:", err));
+  queue = queue.then(() => toggle(tab, granted)).catch((err) => console.warn("Unshit toggle failed:", err));
   return queue;
 }
 
