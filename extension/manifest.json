@@ -3,7 +3,7 @@
   "name": "Unshit",
   "short_name": "Unshit",
   "version": "0.5.0",
-  "description": "One click rebuilds the page you're on in one plain layout: clear sections, one set of blocks. Forms, menus and pop-ups keep working.",
+  "description": "One click rebuilds the page you're on in one plain layout. Nothing is added or reworded.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
