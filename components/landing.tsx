@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Motion } from "./motion";
 
-export const repo = "https://github.com/Aarushe/new-internet-society";
+export const repo = "https://github.com/Aarushe/unshit";
 
 // One full-width row: the rule spans the viewport, the content sits in the
 // centered column whose side rules run the full height of the page.
